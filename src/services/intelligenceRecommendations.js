@@ -1,4 +1,5 @@
 import { getLocationSignals } from './intelligence';
+import { buildNotificationCandidates } from './intelligenceNotifications';
 
 function scoreReason(signals){
   const reasons=[];
@@ -53,6 +54,19 @@ export function buildFleetRecommendations(rows=[]){
     })
     .filter((row)=>row.recommendation?.priority==='high')
     .sort((a,b)=>(b.signals.demand_score+b.signals.activity_score)-(a.signals.demand_score+a.signals.activity_score));
+}
+
+/** Convert recommendation rows into deduplicated, cooldown-aware notification candidates. */
+export function buildBusinessNotificationCandidates(rows=[],options={}){
+  return buildNotificationCandidates(rows,{surface:'business',...options});
+}
+
+export function buildFleetNotificationCandidates(rows=[],options={}){
+  return buildNotificationCandidates(rows,{surface:'fleet',...options});
+}
+
+export function buildConsumerNotificationCandidate(row,options={}){
+  return buildNotificationCandidates([row],{surface:'consumer',...options})[0]||null;
 }
 
 export function rankLocationSignals(rows=[]){
