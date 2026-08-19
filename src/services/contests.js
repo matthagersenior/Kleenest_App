@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { hasBusinessFeature, normalizeBusinessPlan } from '../domain/entitlements';
+import { getUserLeaderboard as getCanonicalUserLeaderboard } from './rewards';
 
 async function requireUser() {
   if (!supabase) throw new Error('Supabase is not configured.');
@@ -32,7 +33,7 @@ export const listActiveContests = (limit = 20) => rpc('home_active_contests', { 
 export const joinContest = (contestId) => rpc('join_contest', { p_contest_id: contestId });
 export const submitContestEntry = (contestId, entry = {}) => rpc('submit_contest_entry', { p_contest_id: contestId, p_entry: entry });
 export const getContestScore = (contestId, userId) => rpc('contest_score', { p_contest_id: contestId, p_user_id: userId });
-export const getUserLeaderboard = (limit = 25) => rpc('get_user_leaderboard', { p_limit: limit });
+export const getUserLeaderboard = (limit = 25) => getCanonicalUserLeaderboard(limit);
 export const getBusinessLeaderboard = (metric, limit = 10) => rpc('get_business_leaderboard', { p_metric: metric, p_limit: limit });
 
 export async function createContest(businessId, payload) {
