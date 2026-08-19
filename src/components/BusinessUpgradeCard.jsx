@@ -1,0 +1,3 @@
+import {Lock,Sparkles} from 'lucide-react';
+import {Link} from 'react-router-dom';
+export default function BusinessUpgradeCard({feature='advanced_analytics',title='Unlock this business feature',description='Upgrade your business plan to unlock this capability.'}){return <section className="detail-panel business-upgrade-card"><div className="panel-heading"><div><span className="eyebrow">BUSINESS PLAN</span><h2>{title}</h2></div><Lock size={22}/></div><p>{description}</p><div className="hero-actions"><Link className="primary" to="/business/entitlements"><Sparkles size={17}/>View plans</Link><span className="tag">{feature.replaceAll('_',' ')}</span></div></section>}
