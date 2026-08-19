@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { recordCheckInEvent } from './events';
+import { syncCheckInRewards } from './rewards';
 
 async function requireUser(){
   if(!supabase)throw new Error('Supabase is not configured.');
@@ -17,6 +18,9 @@ export async function createCheckIn({locationId,placeId=null,qrToken=null}={}){
   if(error)throw error;
   const row=Array.isArray(data)?data[0]:data;
   if(row?.location_id)recordCheckInEvent({locationId:row.location_id,checkInId:row.id,qrCodeId:row.qr_code_id,pointsAwarded:row.points_awarded}).catch(()=>null);
+  // Reward synchronization is secondary to the successful check-in. If the
+  // summary RPC is unavailable, the check-in itself remains committed.
+  if(row?.id)syncCheckInRewards(row.id).catch(()=>null);
   return data;
 }
 
