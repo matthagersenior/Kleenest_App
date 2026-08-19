@@ -19,16 +19,7 @@ function publishRewardUpdate(kind, result, user) {
     source: 'supabase',
   };
   if (typeof window !== 'undefined') {
-    const detail = {
-      profile,
-      transactions: result?.point_transactions ?? [],
-      newBadges: result?.new_badges ?? [],
-      badges: result?.badges ?? [],
-      checkIn: result?.check_in ?? null,
-      review: result?.review ?? null,
-      redemption: result?.redemption ?? null,
-      promotion: result?.promotion ?? null,
-    };
+    const detail = { profile, transactions: result?.point_transactions ?? [], newBadges: result?.new_badges ?? [], badges: result?.badges ?? [], checkIn: result?.check_in ?? null, review: result?.review ?? null, redemption: result?.redemption ?? null, promotion: result?.promotion ?? null };
     window.dispatchEvent(new CustomEvent('kleenest:rewards-updated', { detail }));
     window.dispatchEvent(new CustomEvent(`kleenest:${kind}-rewards-updated`, { detail }));
   }
@@ -37,16 +28,12 @@ function publishRewardUpdate(kind, result, user) {
 
 export async function getRewardsSummary(limit = 50) {
   await requireUser();
-  const { data, error } = await supabase.rpc('user_rewards_history', {
-    p_limit: Math.min(Math.max(Number(limit) || 50, 1), 100),
-  });
+  const { data, error } = await supabase.rpc('user_rewards_history', { p_limit: Math.min(Math.max(Number(limit) || 50, 1), 100) });
   if (error) throw error;
   const profile = data?.profile ?? {};
   return { ...profile, transactions: data?.transactions ?? [], badges: data?.badges ?? [] };
 }
 
-// Refactor-era reward synchronization recovered into the React/Supabase service layer.
-// These are called after successful primary actions and never replace their authorization.
 export async function syncCheckInRewards(checkInId) {
   if (!checkInId) throw new Error('A check-in ID is required.');
   const user = await requireUser();
@@ -70,3 +57,28 @@ export async function syncPromotionRedemptionRewards(redemptionId) {
   if (error) throw error;
   return publishRewardUpdate('promotion', data ?? {}, user);
 }
+
+export const getCheckinRewards = (checkinId) => syncCheckInRewards(checkinId);
+export const getReviewRewards = (reviewId) => syncReviewRewards(reviewId);
+export const getPromotionRewards = (redemptionId) => syncPromotionRedemptionRewards(redemptionId);
+export const getUserLeaderboard = async (limit = 25) => {
+  await requireUser();
+  const { data, error } = await supabase.rpc('get_user_leaderboard', { p_limit: Math.min(Math.max(Number(limit) || 25, 1), 100) });
+  if (error) throw error;
+  return data ?? [];
+};
+
+export const recordProgressionMetric = async ({ metric, sourceType, sourceId, quantity = 1, pointsAwarded = 0, metadata = {} }) => {
+  await requireUser();
+  if (!metric || !sourceType || !sourceId) throw new Error('Progression metric, source type, and source ID are required.');
+  const { data, error } = await supabase.rpc('record_progression_metric_event', {
+    p_metric: metric,
+    p_source_type: sourceType,
+    p_source_id: sourceId,
+    p_quantity: quantity,
+    p_points_awarded: pointsAwarded,
+    p_metadata: metadata,
+  });
+  if (error) throw error;
+  return data;
+};
