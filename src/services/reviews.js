@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { syncReviewRewards } from './rewards';
 
 async function requireUser(){
   if(!supabase) throw new Error('Supabase is not configured.');
@@ -38,5 +39,7 @@ export async function createReview({locationId,stars,comment,cleanlinessPct=null
     p_comment:String(comment||'').trim(),
   });
   if(error) throw error;
+  const row=Array.isArray(data)?data[0]:data;
+  if(row?.id)syncReviewRewards(row.id).catch(()=>null);
   return data;
 }
