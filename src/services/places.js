@@ -26,6 +26,28 @@ export const CATEGORY_DEFINITIONS=[
 const PLACE_FIELDS='id,name,category,description,address,city,state,postal_code,latitude,longitude,rating,review_count,is_verified,location_id,created_at,updated_at';
 const LOCATION_FIELDS='id,cleanliness,cleanliness_pct,accessible,changing_table,smart_bathroom,bathroom_verification_status,bathroom_verification_count,bathroom_positive_count,bathroom_negative_count,source,source_dataset,updated_at,created_at';
 
+function haversineKm(lat1,lon1,lat2,lon2){
+  const R=6371,rad=Math.PI/180,dLat=(lat2-lat1)*rad,dLon=(lon2-lon1)*rad;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*rad)*Math.cos(lat2*rad)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function addDistance(rows,userLocation){
+  if(!userLocation?.latitude||!userLocation?.longitude)return rows;
+  return rows.map(row=>row.latitude==null||row.longitude==null?row:{...row,distance_km:haversineKm(userLocation.latitude,userLocation.longitude,row.latitude,row.longitude),distance_miles:haversineKm(userLocation.latitude,userLocation.longitude,row.latitude,row.longitude)*0.621371});
+}
+
+function rankRestrooms(rows,{userLocation,sort='recommended'}={}){
+  const enriched=addDistance(rows,userLocation);
+  if(sort==='distance'&&userLocation)return [...enriched].sort((a,b)=>(a.distance_km??Infinity)-(b.distance_km??Infinity));
+  if(sort==='cleanliness')return [...enriched].sort((a,b)=>(b.cleanliness_pct??-1)-(a.cleanliness_pct??-1));
+  if(sort==='verified')return [...enriched].sort((a,b)=>(b.bathroom_verification_count??0)-(a.bathroom_verification_count??0));
+  return [...enriched].sort((a,b)=>{
+    const score=(p)=>(p.cleanliness_pct??50)*0.45+(p.bathroom_verification_count??0)*1.5+(p.rating??0)*8-(p.distance_km??0)*2;
+    return score(b)-score(a);
+  });
+}
+
 async function enrichWithLocationData(rows){
   if(!supabase || !rows.length)return rows;
   const ids=[...new Set(rows.map(r=>r.location_id).filter(Boolean))];
@@ -44,18 +66,23 @@ export async function listCategories(){
   return[...CATEGORY_DEFINITIONS.filter(x=>!known.has(x.slug)),...existing];
 }
 
-export async function listPlaces({category='all',limit=100,bounds=null,search=''}={}){
+export async function listPlaces({category='all',limit=100,bounds=null,search='',userLocation=null,sort='recommended',amenities={}}={}){
   if(!supabase){
-    return demoPlaces.filter(p=>(category==='all'||p.category===category)&&(!search||p.name.toLowerCase().includes(search.toLowerCase()))).slice(0,limit).map(normalizePlace);
+    let rows=demoPlaces.filter(p=>(category==='all'||p.category===category)&&(!search||p.name.toLowerCase().includes(search.toLowerCase())));
+    if(category==='restroom')rows=rows.filter(p=>(!amenities.accessible||p.accessible)&&(!amenities.changing_table||p.changing_table));
+    return rankRestrooms(rows,{userLocation,sort}).slice(0,limit).map(normalizePlace);
   }
-  let q=supabase.from('places').select(PLACE_FIELDS).eq('is_active',true).order('name').limit(limit);
+  let q=supabase.from('places').select(PLACE_FIELDS).eq('is_active',true).limit(limit);
   if(category!=='all')q=q.eq('category',category);
   if(search.trim())q=q.ilike('name',`%${search.trim()}%`);
   if(bounds){const{south,west,north,east}=bounds;q=q.gte('latitude',south).lte('latitude',north).gte('longitude',west).lte('longitude',east)}
   const{data,error}=await q;
   if(error)throw error;
   const enriched=await enrichWithLocationData(data??[]);
-  return enriched.map(normalizePlace);
+  let filtered=enriched;
+  if(category==='restroom')filtered=filtered.filter(p=>(!amenities.accessible||p.accessible)&&(!amenities.changing_table||p.changing_table));
+  const ranked=category==='restroom'?rankRestrooms(filtered,{userLocation,sort}):addDistance(filtered,userLocation);
+  return ranked.map(normalizePlace).slice(0,limit);
 }
 
 export async function getPlace(id){
@@ -65,4 +92,8 @@ export async function getPlace(id){
   if(!data)return null;
   const [enriched]=await enrichWithLocationData([data]);
   return normalizePlace(enriched);
+}
+
+export function filterRestrooms(places,{accessible=false,changingTable=false,minCleanliness=0}={}){
+  return places.filter(p=>(!accessible||p.accessible)&&(!changingTable||p.changing_table)&&(p.cleanliness_pct==null||p.cleanliness_pct>=minCleanliness));
 }
