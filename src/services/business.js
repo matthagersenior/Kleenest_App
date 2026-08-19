@@ -13,4 +13,5 @@ export const listEvents=businessId=>rpc('business_list_events',{p_business_id:bu
 export const listPromotions=businessId=>rpc('business_promotion_detail',{p_business_id:businessId});
 export const getAnalytics=businessId=>rpc('business_summary_analytics',{p_business_id:businessId});
 export const getReviewAnalytics=businessId=>rpc('business_review_analytics',{p_business_id:businessId});
+export const listBusinessReviews=businessId=>rpc('business_review_detail',{p_business_id:businessId});
 export const replyToReview=(businessId,reviewId,reply)=>rpc('business_reply_review',{p_business_id:businessId,p_review_id:reviewId,p_reply:reply});
