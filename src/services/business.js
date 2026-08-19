@@ -29,6 +29,7 @@ export const updatePromotion=(businessId,id,payload)=>rpc('business_manage_promo
 export const setPromotionActive=(businessId,id,active)=>rpc('business_manage_promotion',{p_business_id:businessId,p_promotion_id:id,p_action:active?'update':'deactivate',p_payload:{active}});
 export const deletePromotion=(businessId,id)=>rpc('business_manage_promotion',{p_business_id:businessId,p_promotion_id:id,p_action:'deactivate',p_payload:{}});
 export const getAnalytics=businessId=>rpc('business_summary_analytics',{p_business_id:businessId});
+export const getLocationIntelligence=businessId=>rpc('business_location_intelligence',{p_business_id:businessId});
 export const getReviewAnalytics=businessId=>rpc('business_review_analytics',{p_business_id:businessId});
 export const listBusinessReviews=businessId=>rpc('business_review_detail',{p_business_id:businessId});
 export const replyToReview=(businessId,reviewId,reply)=>rpc('business_reply_review',{p_business_id:businessId,p_review_id:reviewId,p_reply:reply});
