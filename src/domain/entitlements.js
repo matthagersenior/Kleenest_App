@@ -7,12 +7,12 @@ export const BUSINESS_PLANS = Object.freeze({
   growth: Object.freeze({
     key: 'growth',
     label: 'Growth',
-    features: ['profile', 'locations', 'reviews', 'basic_analytics', 'qr', 'campaigns', 'promotions', 'events', 'contests', 'advanced_analytics'],
+    features: ['profile', 'locations', 'reviews', 'basic_analytics', 'qr', 'campaigns', 'promotions', 'events', 'contests', 'advanced_analytics', 'engagement_attribution'],
   }),
   enterprise: Object.freeze({
     key: 'enterprise',
     label: 'Enterprise',
-    features: ['profile', 'locations', 'reviews', 'basic_analytics', 'qr', 'campaigns', 'promotions', 'events', 'contests', 'advanced_analytics', 'multi_location', 'priority_support'],
+    features: ['profile', 'locations', 'reviews', 'basic_analytics', 'qr', 'campaigns', 'promotions', 'events', 'contests', 'advanced_analytics', 'engagement_attribution', 'multi_location', 'priority_support'],
   }),
 });
 
