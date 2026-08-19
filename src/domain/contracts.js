@@ -16,13 +16,18 @@ export const QR_SCOPES = Object.freeze({
 });
 
 export function normalizePlace(place) {
+  if (!place) return null;
   return {
     id: String(place.id),
     name: place.name ?? 'Unnamed place',
     category: place.category ?? 'service',
     rating: Number(place.rating ?? 0),
+    reviews: Number(place.review_count ?? place.reviews ?? 0),
     distance: place.distance ?? null,
     latitude: place.latitude ?? null,
     longitude: place.longitude ?? null,
+    description: place.description ?? '',
+    address: place.address ?? [place.city, place.state, place.postal_code].filter(Boolean).join(', '),
+    verified: Boolean(place.is_verified),
   };
 }
