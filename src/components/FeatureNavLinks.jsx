@@ -1,3 +1,3 @@
 import {Link} from 'react-router-dom';
-import {Medal,Sparkles,Trophy} from 'lucide-react';
-export default function FeatureNavLinks({business=false}){return <div className="hero-actions"><Link className="secondary" to="/contests"><Trophy size={16}/>Contests</Link><Link className="secondary" to="/leaderboard"><Medal size={16}/>Leaderboard</Link>{business&&<><Link className="secondary" to="/business/performance"><Sparkles size={16}/>Performance</Link><Link className="secondary" to="/business/entitlements"><Sparkles size={16}/>Plans</Link></>}</div>}
+import {Gift,Medal,Sparkles,Trophy} from 'lucide-react';
+export default function FeatureNavLinks({business=false}){return <div className="hero-actions"><Link className="secondary" to="/rewards"><Gift size={16}/>Rewards</Link><Link className="secondary" to="/contests"><Trophy size={16}/>Contests</Link><Link className="secondary" to="/leaderboard"><Medal size={16}/>Leaderboard</Link>{business&&<><Link className="secondary" to="/business/performance"><Sparkles size={16}/>Performance</Link><Link className="secondary" to="/business/entitlements"><Sparkles size={16}/>Plans</Link></>}</div>}
