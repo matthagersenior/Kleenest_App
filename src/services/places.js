@@ -10,34 +10,23 @@ const demoPlaces = [
 ];
 
 export const CATEGORY_DEFINITIONS = [
-  { slug: 'restaurant', name: 'Restaurants' },
-  { slug: 'cafe', name: 'Cafes' },
-  { slug: 'gas_station', name: 'Gas Stations' },
-  { slug: 'shopping', name: 'Shopping' },
-  { slug: 'park', name: 'Parks' },
-  { slug: 'service', name: 'Services' },
+  { slug: 'restaurant', name: 'Restaurants' }, { slug: 'cafe', name: 'Cafes' }, { slug: 'gas_station', name: 'Gas Stations' },
+  { slug: 'shopping', name: 'Shopping' }, { slug: 'park', name: 'Parks' }, { slug: 'service', name: 'Services' },
+  { slug: 'restroom', name: 'Bathrooms' }, { slug: 'health', name: 'Health' }, { slug: 'public_safety', name: 'Public Safety' },
 ];
 
 export async function listCategories() {
   if (!supabase) return CATEGORY_DEFINITIONS;
-  const { data, error } = await supabase
-    .from('place_categories')
-    .select('slug,name')
-    .order('name');
+  const { data, error } = await supabase.from('place_categories').select('slug,name').order('name');
   if (error) throw error;
-  return data ?? [];
+  const existing = data ?? [];
+  const known = new Set(existing.map(x => x.slug));
+  return [...existing, ...CATEGORY_DEFINITIONS.filter(x => !known.has(x.slug))];
 }
 
-export async function listPlaces({ category = 'all', limit = 50 } = {}) {
+export async function listPlaces({ category = 'all', limit = 100 } = {}) {
   if (!supabase) return demoPlaces.filter(matchesCategory(category)).slice(0, limit).map(normalizePlace);
-
-  let query = supabase
-    .from('places')
-    .select('id,name,category,description,address,city,state,postal_code,latitude,longitude,rating,review_count,is_verified')
-    .eq('is_active', true)
-    .order('name')
-    .limit(limit);
-
+  let query = supabase.from('places').select('id,name,category,description,address,city,state,postal_code,latitude,longitude,rating,review_count,is_verified').eq('is_active', true).order('name').limit(limit);
   if (category !== 'all') query = query.eq('category', category);
   const { data, error } = await query;
   if (error) throw error;
@@ -45,17 +34,9 @@ export async function listPlaces({ category = 'all', limit = 50 } = {}) {
 }
 
 export async function getPlace(id) {
-  if (!supabase) return normalizePlace(demoPlaces.find((place) => String(place.id) === String(id)) ?? null);
-  const { data, error } = await supabase
-    .from('places')
-    .select('id,name,category,description,address,city,state,postal_code,latitude,longitude,rating,review_count,is_verified')
-    .eq('id', id)
-    .eq('is_active', true)
-    .maybeSingle();
+  if (!supabase) return normalizePlace(demoPlaces.find(place => String(place.id) === String(id)) ?? null);
+  const { data, error } = await supabase.from('places').select('id,name,category,description,address,city,state,postal_code,latitude,longitude,rating,review_count,is_verified').eq('id', id).eq('is_active', true).maybeSingle();
   if (error) throw error;
   return data ? normalizePlace(data) : null;
 }
-
-function matchesCategory(category) {
-  return (place) => category === 'all' || place.category === category;
-}
+function matchesCategory(category) { return place => category === 'all' || place.category === category; }
