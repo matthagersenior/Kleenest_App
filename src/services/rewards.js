@@ -8,13 +8,18 @@ async function requireUser() {
   return user;
 }
 
-export async function getRewardsSummary() {
-  const user = await requireUser();
-  const [{ data: profile, error: profileError }, { data: transactions, error: txError }] = await Promise.all([
-    supabase.from('profiles').select('points,level,streak,total_check_ins,total_reviews').eq('id', user.id).single(),
-    supabase.from('reward_transactions').select('id,check_in_id,points,reason,metadata,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50),
-  ]);
-  if (profileError) throw profileError;
-  if (txError) throw txError;
-  return { ...profile, transactions: transactions ?? [] };
+// Canonical reward read model. The database RPC applies auth.uid() and returns
+// the authoritative profile, point ledger history, and earned badges.
+export async function getRewardsSummary(limit = 50) {
+  await requireUser();
+  const { data, error } = await supabase.rpc('user_rewards_history', {
+    p_limit: Math.min(Math.max(Number(limit) || 50, 1), 100),
+  });
+  if (error) throw error;
+  const profile = data?.profile ?? {};
+  return {
+    ...profile,
+    transactions: data?.transactions ?? [],
+    badges: data?.badges ?? [],
+  };
 }
