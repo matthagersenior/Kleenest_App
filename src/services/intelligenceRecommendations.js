@@ -14,32 +14,45 @@ export function buildLocationRecommendation(snapshot,signals,{surface='consumer'
   if(!snapshot)return null;
   const reasons=scoreReason(signals);
   if(surface==='business'){
-    if(signals.operational_status==='attention'||signals.operational_status==='stale')return{
-      type:'operational_attention',priority:'high',title:'Location needs attention',body:'Recent network signals indicate that this location may need verification or operational follow-up.',reasons
-    };
-    if(signals.demand_score>=70)return{
-      type:'demand_opportunity',priority:'high',title:'Demand opportunity',body:'Kleenest is seeing elevated interest around this location.',reasons
-    };
+    if(signals.operational_status==='attention'||signals.operational_status==='stale')return{type:'operational_attention',priority:'high',title:'Location needs attention',body:'Recent network signals indicate that this location may need verification or operational follow-up.',reasons};
+    if(signals.demand_score>=70)return{type:'demand_opportunity',priority:'high',title:'Demand opportunity',body:'Kleenest is seeing elevated interest around this location.',reasons};
     return{type:'business_health',priority:'normal',title:'Location health is stable',body:'No immediate operational action is indicated by the current signals.',reasons};
   }
   if(surface==='fleet'){
-    if(signals.demand_score>=70||signals.activity_score>=70)return{
-      type:'high_activity_zone',priority:'high',title:'High-activity zone',body:'Recent demand and activity make this location a useful operational waypoint.',reasons
-    };
+    if(signals.demand_score>=70||signals.activity_score>=70)return{type:'high_activity_zone',priority:'high',title:'High-activity zone',body:'Recent demand and activity make this location a useful operational waypoint.',reasons};
     return{type:'normal_zone',priority:'normal',title:'Normal activity',body:'No elevated operational signal is currently detected.',reasons};
   }
-  if(signals.quality_score>=80&&signals.operational_status!=='stale')return{
-    type:'trusted_place',priority:'normal',title:'Trusted place',body:'Strong community confidence makes this a reliable place to consider.',reasons
-  };
-  if(signals.demand_score>=70)return{
-    type:'popular_place',priority:'normal',title:'Popular nearby',body:'This place is receiving elevated interest from the Kleenest network.',reasons
-  };
+  if(signals.quality_score>=80&&signals.operational_status!=='stale')return{type:'trusted_place',priority:'normal',title:'Trusted place',body:'Strong community confidence makes this a reliable place to consider.',reasons};
+  if(signals.demand_score>=70)return{type:'popular_place',priority:'normal',title:'Popular nearby',body:'This place is receiving elevated interest from the Kleenest network.',reasons};
   return{type:'standard_place',priority:'low',title:'Nearby place',body:'This place has current Kleenest intelligence available.',reasons};
 }
 
 export async function recommendLocation(placeId,{surface='consumer'}={}){
   const{snapshot,signals}=await getLocationSignals(placeId);
   return buildLocationRecommendation(snapshot,signals,{surface});
+}
+
+/** Convert persisted business intelligence rows into the same recommendation contract. */
+export function buildBusinessRecommendations(rows=[]){
+  return rows.map((row)=>{
+    const signals={
+      demand_score:Math.min(100,Math.round(Number(row.searches||0)*2+Number(row.directions||0)*2+Number(row.check_ins||0)*3)),
+      activity_score:Math.min(100,Math.round(Number(row.check_ins||0)*3+Number(row.reviews||0)*2)),
+      quality_score:Number(row.intelligence_score||0),
+      operational_status:row.has_recent_conflict?'attention':row.freshness_label?.toLowerCase().includes('stale')?'stale':'normal'
+    };
+    return{location_id:row.location_id,name:row.name,recommendation:buildLocationRecommendation(row,signals,{surface:'business'}),signals};
+  });
+}
+
+export function buildFleetRecommendations(rows=[]){
+  return rows
+    .map((row)=>{
+      const signals={demand_score:Number(row.demand_score||0),activity_score:Number(row.activity_score||0),quality_score:Number(row.quality_score||0),operational_status:row.operational_status||'normal'};
+      return{location_id:row.location_id,name:row.name,recommendation:buildLocationRecommendation(row,signals,{surface:'fleet'}),signals};
+    })
+    .filter((row)=>row.recommendation?.priority==='high')
+    .sort((a,b)=>(b.signals.demand_score+b.signals.activity_score)-(a.signals.demand_score+a.signals.activity_score));
 }
 
 export function rankLocationSignals(rows=[]){
