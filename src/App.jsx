@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Map, Search, Star, Store, Trophy, UserRound, Menu, X } from 'lucide-react';
-import { categories, getPlace, places } from './data/places';
+import { listCategories, listPlaces, getPlace } from './services/places';
 
 function Shell() {
   const [open, setOpen] = useState(false);
@@ -28,44 +28,69 @@ function Shell() {
   </div>;
 }
 
+function usePlaces(category = 'all') {
+  const [state, setState] = useState({ places: [], loading: true, error: null });
+  useEffect(() => {
+    let active = true;
+    setState(s => ({ ...s, loading: true, error: null }));
+    listPlaces({ category }).then(places => {
+      if (active) setState({ places, loading: false, error: null });
+    }).catch(error => {
+      if (active) setState({ places: [], loading: false, error: error.message || 'Unable to load places.' });
+    });
+    return () => { active = false; };
+  }, [category]);
+  return state;
+}
+
 function Home() {
+  const { places, loading } = usePlaces();
   return <section className="page home-page">
     <div className="hero"><span className="eyebrow">LOCAL DISCOVERY, REBUILT</span><h1>Find places worth<br /><em>coming back to.</em></h1><p>Kleenest brings local places, real experiences, check-ins, reviews, rewards, and business tools into one clean community.</p><div className="hero-actions"><Link className="primary" to="/map"><Map size={18}/> Explore the map</Link><Link className="secondary" to="/discover"><Search size={18}/> Discover places</Link></div></div>
-    <section className="section"><div className="section-heading"><div><span className="eyebrow">NEAR YOU</span><h2>Places to explore</h2></div><Link to="/map">View map →</Link></div><div className="place-grid">{places.slice(0, 3).map(place => <PlaceCard key={place.id} place={place} />)}</div></section>
+    <section className="section"><div className="section-heading"><div><span className="eyebrow">NEAR YOU</span><h2>Places to explore</h2></div><Link to="/map">View map →</Link></div><div className="place-grid">{loading ? <LoadingState /> : places.slice(0, 3).map(place => <PlaceCard key={place.id} place={place} />)}</div></section>
     <section className="feature-grid"><div className="feature"><Trophy /><div><h3>Earn while you explore</h3><p>Check in, complete challenges, and build your Kleenest reputation.</p></div></div><div className="feature"><Store /><div><h3>Built for local businesses</h3><p>Profiles, reviews, promotions, QR check-ins, analytics, and more.</p></div></div></section>
   </section>;
 }
 
 function PlaceCard({ place }) {
-  return <Link className="place-card" to={`/place/${place.id}`}><div className="place-image">{place.category.slice(0, 1)}</div><div><span className="tag">{place.category}</span><h3>{place.name}</h3><div className="meta"><strong>★ {place.rating}</strong><span>•</span><span>{place.distance}</span></div></div></Link>;
+  return <Link className="place-card" to={`/place/${place.id}`}><div className="place-image">{place.category.slice(0, 1).toUpperCase()}</div><div><span className="tag">{place.category.replace('_', ' ')}</span><h3>{place.name}</h3><div className="meta"><strong>★ {place.rating.toFixed(1)}</strong><span>•</span><span>{place.distance ?? 'Local'}</span></div></div></Link>;
 }
 
 function MapPage() {
-  const [active, setActive] = useState('All');
-  const filtered = useMemo(() => active === 'All' ? places : places.filter(p => p.category === active), [active]);
+  const [active, setActive] = useState('all');
+  const [categories, setCategories] = useState([]);
+  const { places, loading, error } = usePlaces(active);
+  useEffect(() => { listCategories().then(setCategories).catch(() => setCategories([])); }, []);
+  const filters = useMemo(() => [{ slug: 'all', name: 'All' }, ...categories], [categories]);
   return <section className="page map-page"><div className="page-header"><div><span className="eyebrow">EXPLORE</span><h1>Map</h1><p>Filter local places, then open their full details.</p></div><button className="primary"><Search size={18}/> Search this area</button></div>
-    <div className="filters">{categories.map(category => <button key={category} className={active === category ? 'selected' : ''} onClick={() => setActive(category)}>{category}</button>)}</div>
-    <div className="map-layout"><div className="map-canvas"><div className="map-placeholder"><Map size={42}/><strong>Map surface</strong><span>{filtered.length} {filtered.length === 1 ? 'place' : 'places'} match this filter.</span></div></div><aside className="map-results">{filtered.map(p => <PlaceCard key={p.id} place={p}/>)}</aside></div>
+    <div className="filters">{filters.map(category => <button key={category.slug} className={active === category.slug ? 'selected' : ''} onClick={() => setActive(category.slug)}>{category.name}</button>)}</div>
+    <div className="map-layout"><div className="map-canvas"><div className="map-placeholder"><Map size={42}/><strong>Map surface</strong><span>{loading ? 'Loading places…' : `${places.length} ${places.length === 1 ? 'place' : 'places'} match this filter.`}</span></div></div><aside className="map-results">{error ? <div className="empty-state"><h3>Could not load places</h3><p>{error}</p></div> : loading ? <LoadingState /> : places.map(p => <PlaceCard key={p.id} place={p}/>)}</aside></div>
   </section>;
 }
 
 function PlaceDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const place = getPlace(id);
+  const [place, setPlace] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [checkedIn, setCheckedIn] = useState(false);
-  if (!place) return <section className="page"><Link to="/map" className="back-link"><ArrowLeft size={16}/> Back to map</Link><div className="empty-state"><h2>Place not found</h2><p>This place is no longer available.</p></div></section>;
+  useEffect(() => { let active = true; setLoading(true); getPlace(id).then(result => { if (active) setPlace(result); }).catch(e => { if (active) setError(e.message || 'Unable to load this place.'); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, [id]);
+  if (loading) return <section className="page"><Link to="/map" className="back-link"><ArrowLeft size={16}/> Back to map</Link><LoadingState /></section>;
+  if (error || !place) return <section className="page"><Link to="/map" className="back-link"><ArrowLeft size={16}/> Back to map</Link><div className="empty-state"><h2>{error ? 'Unable to load place' : 'Place not found'}</h2><p>{error || 'This place is no longer available.'}</p></div></section>;
   return <section className="page details-page">
     <button className="back-link" onClick={() => navigate(-1)}><ArrowLeft size={16}/> Back</button>
-    <div className="details-hero"><div className="details-image">{place.category.slice(0, 1)}</div><div><span className="eyebrow">{place.category.toUpperCase()}</span><h1>{place.name}</h1><div className="rating"><Star size={18} fill="currentColor"/> <strong>{place.rating}</strong><span>({place.reviews} reviews)</span></div><p>{place.description}</p><span className="address">{place.address} · {place.distance}</span></div></div>
-    <div className="details-grid"><section className="detail-panel"><h2>Community reviews</h2><div className="review"><div className="review-stars">★★★★★</div><strong>A place worth knowing about.</strong><p>Community reviews will be connected to the canonical review service here.</p></div><div className="review"><div className="review-stars">★★★★☆</div><strong>Good local experience.</strong><p>Review history and verified visit context will appear here.</p></div></section><aside className="detail-panel checkin-panel"><Trophy size={28}/><h2>Check in</h2><p>Check-ins verify visits and can power rewards, contests, and your Kleenest activity.</p><button className="primary" onClick={() => setCheckedIn(true)} disabled={checkedIn}>{checkedIn ? <><CheckCircle2 size={18}/> Checked in</> : 'Check in'}</button></aside></div>
+    <div className="details-hero"><div className="details-image">{place.category.slice(0, 1).toUpperCase()}</div><div><span className="eyebrow">{place.category.replace('_', ' ').toUpperCase()}</span><h1>{place.name}</h1><div className="rating"><Star size={18} fill="currentColor"/> <strong>{place.rating.toFixed(1)}</strong><span>({place.reviews} reviews)</span></div><p>{place.description}</p><span className="address">{place.address || 'Address coming soon'} {place.distance ? `· ${place.distance}` : ''}</span></div></div>
+    <div className="details-grid"><section className="detail-panel"><h2>Community reviews</h2><div className="review"><div className="review-stars">★★★★★</div><strong>Review surface ready</strong><p>Authenticated community reviews will connect here next, using this canonical place ID.</p></div></section><aside className="detail-panel checkin-panel"><Trophy size={28}/><h2>Check in</h2><p>Check-ins verify visits and can power rewards, contests, and your Kleenest activity.</p><button className="primary" onClick={() => setCheckedIn(true)} disabled={checkedIn}>{checkedIn ? <><CheckCircle2 size={18}/> Checked in</> : 'Check in'}</button></aside></div>
   </section>;
 }
 
-function Discover() { return <section className="page"><div className="page-header"><div><span className="eyebrow">DISCOVERY</span><h1>Discover</h1><p>Reviews, recommendations, promotions, and community activity.</p></div></div><div className="place-grid">{places.map(place => <PlaceCard key={place.id} place={place} />)}</div></section>; }
+function Discover() { const { places, loading } = usePlaces(); return <section className="page"><div className="page-header"><div><span className="eyebrow">DISCOVERY</span><h1>Discover</h1><p>Reviews, recommendations, promotions, and community activity.</p></div></div><div className="place-grid">{loading ? <LoadingState /> : places.map(place => <PlaceCard key={place.id} place={place} />)}</div></section>; }
 
 function Profile() { return <section className="page"><div className="profile-card"><div className="avatar"><UserRound/></div><div><span className="eyebrow">YOUR PROFILE</span><h1>Welcome to Kleenest</h1><p>Sign in to manage your profile, reviews, check-ins, rewards, and social activity.</p><button className="primary">Sign in</button></div></div><div className="stat-grid"><div><strong>0</strong><span>Check-ins</span></div><div><strong>0</strong><span>Reviews</span></div><div><strong>0</strong><span>Points</span></div></div></section>; }
 
 function Business() { return <section className="page"><div className="business-hero"><span className="eyebrow">KLEENEST FOR BUSINESS</span><h1>Turn local attention<br /><em>into loyal customers.</em></h1><p>One business workspace for locations, profile content, reviews, promotions, campaigns, contests, QR check-ins, and analytics.</p><button className="primary"><Store size={18}/> Create a business profile</button></div><div className="feature-grid"><div className="feature"><Store/><div><h3>Business workspace</h3><p>One canonical home for every location and business action.</p></div></div><div className="feature"><Trophy/><div><h3>QR + rewards</h3><p>Check-ins can power engagement, contests, and analytics.</p></div></div></div></section>; }
+
+function LoadingState() { return <div className="empty-state"><p>Loading places…</p></div>; }
 
 export default function App() { return <Shell />; }
