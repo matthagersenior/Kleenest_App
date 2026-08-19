@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { recordCheckInEvent } from './events';
 import { syncCheckInRewards } from './rewards';
+import { recordBusinessEngagement } from './businessLifecycle';
 
 async function requireUser(){
   if(!supabase)throw new Error('Supabase is not configured.');
@@ -18,6 +19,10 @@ export async function createCheckIn({locationId,placeId=null,qrToken=null}={}){
   if(error)throw error;
   const row=Array.isArray(data)?data[0]:data;
   if(row?.location_id)recordCheckInEvent({locationId:row.location_id,checkInId:row.id,qrCodeId:row.qr_code_id,pointsAwarded:row.points_awarded}).catch(()=>null);
+  // Business attribution is secondary to the authoritative check-in. The
+  // primary check-in remains committed if the business analytics contract is
+  // unavailable or the business is not entitled to advanced attribution.
+  if(row?.business_id)recordBusinessEngagement(row.business_id,{locationId:row.location_id,activityType:'check_in',source:qrToken?'qr_checkin':'check_in',metadata:{checkInId:row.id,qrCodeId:row.qr_code_id}}).catch(()=>null);
   // Reward synchronization is secondary to the successful check-in. If the
   // summary RPC is unavailable, the check-in itself remains committed.
   if(row?.id)syncCheckInRewards(row.id).catch(()=>null);
