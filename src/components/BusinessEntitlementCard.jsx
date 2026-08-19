@@ -1,0 +1,5 @@
+import {Lock,CheckCircle2,ArrowUpRight} from 'lucide-react';
+import {Link} from 'react-router-dom';
+import {normalizeBusinessPlan,hasBusinessFeature} from '../domain/entitlements';
+const LABELS={qr:'QR check-ins',campaigns:'Campaigns',promotions:'Promotions',events:'Events',contests:'Contests',advanced_analytics:'Advanced analytics',engagement_attribution:'Engagement attribution',multi_location:'Multi-location'};
+export default function BusinessEntitlementCard({plan,feature,title,description}){const normalized=normalizeBusinessPlan(plan);const enabled=hasBusinessFeature(normalized,feature);if(enabled)return <div className="entitlement-card enabled"><CheckCircle2 size={18}/><div><strong>{title||LABELS[feature]||feature}</strong><span>Included with {normalized.label}</span></div></div>;return <div className="entitlement-card locked"><Lock size={18}/><div><strong>{title||LABELS[feature]||feature}</strong><span>{description||`Available on a higher business plan.`}</span></div><Link className="secondary compact" to="/business/dashboard">Upgrade <ArrowUpRight size={14}/></Link></div>}
