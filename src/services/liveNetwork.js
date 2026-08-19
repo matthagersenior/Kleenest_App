@@ -1,6 +1,9 @@
 import { supabase } from '../lib/supabase';
 
 export const LIVE_EVENT_TYPES = Object.freeze({
+  USER_LOCATION_VIEWED: 'user.location_viewed',
+  USER_DIRECTIONS_REQUESTED: 'user.directions_requested',
+  USER_ROUTE_STARTED: 'user.route_started',
   USER_APPROACHING_LOCATION: 'user.approaching_location',
   USER_ARRIVED: 'user.arrived',
   USER_DEPARTED: 'user.departed',
@@ -12,7 +15,7 @@ export const LIVE_EVENT_TYPES = Object.freeze({
   VEHICLE_ENTERED_ZONE: 'fleet.vehicle_entered_zone',
   VEHICLE_ARRIVED: 'fleet.vehicle_arrived',
   VEHICLE_DEPARTED: 'fleet.vehicle_departed',
-  ROUTE_STARTED: 'fleet.route_started',
+  FLEET_ROUTE_STARTED: 'fleet.route_started',
   ROUTE_CHANGED: 'fleet.route_changed',
   TASK_COMPLETED: 'fleet.task_completed'
 });
