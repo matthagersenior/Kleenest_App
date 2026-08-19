@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { submitObservation } from './observations';
 import { createCheckIn as createCanonicalCheckIn } from './checkins';
-import { recordReviewSubmitted } from './events';
+import { recordReviewSubmitted,recordFavorite,recordArrival,recordDirectionsRequested } from './events';
 function client(){if(!supabase)throw new Error('Supabase is not configured.');return supabase}
 async function user(){const{data:{user:u},error}=await client().auth.getUser();if(error)throw error;if(!u)throw new Error('Sign in to continue.');return u}
 function safeError(error,fallback){const e=new Error(error?.message||fallback);e.cause=error;return e}
@@ -16,3 +16,6 @@ export async function replyToReview({businessId,reviewId,reply}){await user();if
 export async function likeReview(reviewId){await user();const{data,error}=await client().rpc('toggle_review_like',{p_review_id:reviewId});if(error)throw safeError(error,'The review reaction could not be updated.');return data}
 export async function uploadReviewPhoto({reviewId,file,sortOrder=0}){await user();if(!file)throw new Error('Choose an image first.');const ext=(file.name.split('.').pop()||'jpg').toLowerCase();const path=`reviews/${reviewId}/${crypto.randomUUID()}.${ext}`;const{error:uploadError}=await client().storage.from('review-photos').upload(path,file,{contentType:file.type||'image/jpeg',upsert:false});if(uploadError)throw safeError(uploadError,'The review photo could not be uploaded.');const{data,error}=await client().from('review_photos').insert({review_id:reviewId,storage_path:path,mime_type:file.type||'image/jpeg',width:null,height:null,sort_order:sortOrder}).select().single();if(error)throw safeError(error,'The review photo record could not be saved.');return data}
 export async function deleteReviewPhoto(photoId,storagePath){await user();const{error:dbError}=await client().from('review_photos').delete().eq('id',photoId);if(dbError)throw safeError(dbError,'The review photo could not be deleted.');if(storagePath)await client().storage.from('review-photos').remove([storagePath])}
+export async function favoritePlace(locationId,action='add'){await user();const{data,error}=await client().rpc('toggle_favorite_location',{p_location_id:locationId,p_action:action});if(error)throw safeError(error,'Favorite could not be updated.');recordFavorite({locationId,action}).catch(()=>null);return data}
+export async function recordPlaceArrival(locationId){await user();return recordArrival({locationId})}
+export async function requestPlaceDirections(locationId,mode='driving'){await user();return recordDirectionsRequested({locationId,mode})}
