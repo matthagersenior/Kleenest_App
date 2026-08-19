@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import {recordRewardEvent} from './events';
 
 async function requireUser() {
   if (!supabase) throw new Error('Supabase is not configured.');
@@ -23,6 +24,9 @@ function publishRewardUpdate(kind, result, user) {
     window.dispatchEvent(new CustomEvent('kleenest:rewards-updated', { detail }));
     window.dispatchEvent(new CustomEvent(`kleenest:${kind}-rewards-updated`, { detail }));
   }
+  const transactions=result?.point_transactions??[];
+  const points=transactions.reduce((sum,t)=>sum+Number(t?.points??t?.points_awarded??t?.amount??0),0);
+  if(points>0) recordRewardEvent({points,reason:`${kind}_reward`,metadata:{source_type:kind,source_id:result?.[kind]?.id??result?.check_in?.id??result?.review?.id??result?.promotion?.id??result?.redemption?.id??null}}).catch(()=>null);
   return result;
 }
 
