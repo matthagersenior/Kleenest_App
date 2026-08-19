@@ -1,0 +1,7 @@
+import { supabase } from '../lib/supabase';
+
+async function requireUser(){if(!supabase)throw new Error('Supabase is not configured.');const {data:{user},error}=await supabase.auth.getUser();if(error)throw error;if(!user)throw new Error('Sign in to continue.');return user}
+export async function redeemQr(code){await requireUser();const {data,error}=await supabase.rpc('redeem_qr_code',{p_code:String(code||'').trim()});if(error)throw error;return data}
+export async function createBusinessQr({locationId,label='Check-in',purpose='check_in',actionType='check_in',singleUse=false,maxRedemptions=null}){await requireUser();const {data,error}=await supabase.rpc('create_business_qr',{p_location_id:locationId,p_label:label,p_purpose:purpose,p_action_type:actionType,p_single_use:singleUse,p_max_redemptions:maxRedemptions});if(error)throw error;return data}
+export async function listBusinessQrs(locationId){await requireUser();let q=supabase.from('qr_codes').select('id,location_id,code,active,label,purpose,action_type,single_use,max_redemptions,created_at,customization').order('created_at',{ascending:false});if(locationId)q=q.eq('location_id',locationId);const {data,error}=await q;if(error)throw error;return data??[]}
+export async function setQrActive(qrId,active){await requireUser();const {data,error}=await supabase.rpc('set_qr_active',{p_qr_id:qrId,p_active:active});if(error)throw error;return data}
