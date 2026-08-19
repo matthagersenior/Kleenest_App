@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Map, Search, Star, Store, Trophy, UserRound, Menu, X } from 'lucide-react';
 import { listCategories, listPlaces, getPlace } from './services/places';
+import MapSurface from './components/MapSurface';
 
 function Shell() {
   const [open, setOpen] = useState(false);
@@ -48,12 +49,12 @@ function Home() {
   return <section className="page home-page">
     <div className="hero"><span className="eyebrow">LOCAL DISCOVERY, REBUILT</span><h1>Find places worth<br /><em>coming back to.</em></h1><p>Kleenest brings local places, real experiences, check-ins, reviews, rewards, and business tools into one clean community.</p><div className="hero-actions"><Link className="primary" to="/map"><Map size={18}/> Explore the map</Link><Link className="secondary" to="/discover"><Search size={18}/> Discover places</Link></div></div>
     <section className="section"><div className="section-heading"><div><span className="eyebrow">NEAR YOU</span><h2>Places to explore</h2></div><Link to="/map">View map →</Link></div><div className="place-grid">{loading ? <LoadingState /> : places.slice(0, 3).map(place => <PlaceCard key={place.id} place={place} />)}</div></section>
-    <section className="feature-grid"><div className="feature"><Trophy /><div><h3>Earn while you explore</h3><p>Check in, complete challenges, and build your Kleenest reputation.</p></div></div><div className="feature"><Store /><div><h3>Built for local businesses</h3><p>Profiles, reviews, promotions, QR check-ins, analytics, and more.</p></div></div></section>
+    <section className="feature-grid"><div className="feature"><Trophy /><div><h3>Earn while you explore</h3><p>Check in, complete challenges, and build your Kleenest reputation.</p></div></div><div className="feature"><Store /><div><h3>Built for local businesses</h3><p>Profiles, reviews, promotions, campaigns, contests, QR check-ins, and analytics.</p></div></div></section>
   </section>;
 }
 
 function PlaceCard({ place }) {
-  return <Link className="place-card" to={`/place/${place.id}`}><div className="place-image">{place.category.slice(0, 1).toUpperCase()}</div><div><span className="tag">{place.category.replace('_', ' ')}</span><h3>{place.name}</h3><div className="meta"><strong>★ {place.rating.toFixed(1)}</strong><span>•</span><span>{place.distance ?? 'Local'}</span></div></div></Link>;
+  return <Link className="place-card" to={`/place/${place.id}`}><div className="place-image">{place.category.slice(0, 1).toUpperCase()}</div><div><span className="tag">{place.category.replaceAll('_', ' ')}</span><h3>{place.name}</h3><div className="meta"><strong>★ {place.rating.toFixed(1)}</strong><span>•</span><span>{place.distance ?? 'Local'}</span></div></div></Link>;
 }
 
 function MapPage() {
@@ -62,9 +63,9 @@ function MapPage() {
   const { places, loading, error } = usePlaces(active);
   useEffect(() => { listCategories().then(setCategories).catch(() => setCategories([])); }, []);
   const filters = useMemo(() => [{ slug: 'all', name: 'All' }, ...categories], [categories]);
-  return <section className="page map-page"><div className="page-header"><div><span className="eyebrow">EXPLORE</span><h1>Map</h1><p>Filter local places, then open their full details.</p></div><button className="primary"><Search size={18}/> Search this area</button></div>
+  return <section className="page map-page"><div className="page-header"><div><span className="eyebrow">EXPLORE</span><h1>Map</h1><p>Filter local places, including automatically imported known bathrooms.</p></div><button className="primary"><Search size={18}/> Search this area</button></div>
     <div className="filters">{filters.map(category => <button key={category.slug} className={active === category.slug ? 'selected' : ''} onClick={() => setActive(category.slug)}>{category.name}</button>)}</div>
-    <div className="map-layout"><div className="map-canvas"><div className="map-placeholder"><Map size={42}/><strong>Map surface</strong><span>{loading ? 'Loading places…' : `${places.length} ${places.length === 1 ? 'place' : 'places'} match this filter.`}</span></div></div><aside className="map-results">{error ? <div className="empty-state"><h3>Could not load places</h3><p>{error}</p></div> : loading ? <LoadingState /> : places.map(p => <PlaceCard key={p.id} place={p}/>)}</aside></div>
+    <div className="map-layout"><div className="map-canvas"><MapSurface places={places} /></div><aside className="map-results">{error ? <div className="empty-state"><h3>Could not load places</h3><p>{error}</p></div> : loading ? <LoadingState /> : places.map(p => <PlaceCard key={p.id} place={p}/>)}</aside></div>
   </section>;
 }
 
@@ -80,7 +81,7 @@ function PlaceDetails() {
   if (error || !place) return <section className="page"><Link to="/map" className="back-link"><ArrowLeft size={16}/> Back to map</Link><div className="empty-state"><h2>{error ? 'Unable to load place' : 'Place not found'}</h2><p>{error || 'This place is no longer available.'}</p></div></section>;
   return <section className="page details-page">
     <button className="back-link" onClick={() => navigate(-1)}><ArrowLeft size={16}/> Back</button>
-    <div className="details-hero"><div className="details-image">{place.category.slice(0, 1).toUpperCase()}</div><div><span className="eyebrow">{place.category.replace('_', ' ').toUpperCase()}</span><h1>{place.name}</h1><div className="rating"><Star size={18} fill="currentColor"/> <strong>{place.rating.toFixed(1)}</strong><span>({place.reviews} reviews)</span></div><p>{place.description}</p><span className="address">{place.address || 'Address coming soon'} {place.distance ? `· ${place.distance}` : ''}</span></div></div>
+    <div className="details-hero"><div className="details-image">{place.category.slice(0, 1).toUpperCase()}</div><div><span className="eyebrow">{place.category.replaceAll('_', ' ').toUpperCase()}</span><h1>{place.name}</h1><div className="rating"><Star size={18} fill="currentColor"/> <strong>{place.rating.toFixed(1)}</strong><span>({place.reviews} reviews)</span></div><p>{place.description}</p><span className="address">{place.address || 'Address coming soon'} {place.distance ? `· ${place.distance}` : ''}</span></div></div>
     <div className="details-grid"><section className="detail-panel"><h2>Community reviews</h2><div className="review"><div className="review-stars">★★★★★</div><strong>Review surface ready</strong><p>Authenticated community reviews will connect here next, using this canonical place ID.</p></div></section><aside className="detail-panel checkin-panel"><Trophy size={28}/><h2>Check in</h2><p>Check-ins verify visits and can power rewards, contests, and your Kleenest activity.</p><button className="primary" onClick={() => setCheckedIn(true)} disabled={checkedIn}>{checkedIn ? <><CheckCircle2 size={18}/> Checked in</> : 'Check in'}</button></aside></div>
   </section>;
 }
