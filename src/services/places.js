@@ -1,42 +1,8 @@
 import { normalizePlace } from '../domain/contracts';
 import { supabase } from '../lib/supabase';
-
-const demoPlaces = [
-  { id: 'demo-1', name: 'Kleenest Coffee House', category: 'cafe', rating: 4.8, review_count: 38, description: 'A local coffee stop with a welcoming atmosphere.', address: '12 Main Street' },
-  { id: 'demo-2', name: 'Main Street Market', category: 'restaurant', rating: 4.6, review_count: 51, description: 'A neighborhood restaurant serving the local community.', address: '24 Main Street' },
-  { id: 'demo-3', name: 'River Road Fuel', category: 'gas_station', rating: 4.4, review_count: 22, description: 'Convenient fuel and everyday essentials.', address: '101 River Road' },
-  { id: 'demo-4', name: 'Downtown Goods', category: 'shopping', rating: 4.7, review_count: 17, description: 'Independent local shopping and specialty goods.', address: '7 Market Avenue' },
-  { id: 'demo-5', name: 'Riverside Park', category: 'park', rating: 4.9, review_count: 29, description: 'A clean outdoor space for walks, recreation, and events.', address: '1 Riverside Drive' },
-];
-
-export const CATEGORY_DEFINITIONS = [
-  { slug: 'restaurant', name: 'Restaurants' }, { slug: 'cafe', name: 'Cafes' }, { slug: 'gas_station', name: 'Gas Stations' },
-  { slug: 'shopping', name: 'Shopping' }, { slug: 'park', name: 'Parks' }, { slug: 'service', name: 'Services' },
-  { slug: 'restroom', name: 'Bathrooms' }, { slug: 'health', name: 'Health' }, { slug: 'public_safety', name: 'Public Safety' },
-];
-
-export async function listCategories() {
-  if (!supabase) return CATEGORY_DEFINITIONS;
-  const { data, error } = await supabase.from('place_categories').select('slug,name').order('name');
-  if (error) throw error;
-  const existing = data ?? [];
-  const known = new Set(existing.map(x => x.slug));
-  return [...existing, ...CATEGORY_DEFINITIONS.filter(x => !known.has(x.slug))];
-}
-
-export async function listPlaces({ category = 'all', limit = 100 } = {}) {
-  if (!supabase) return demoPlaces.filter(matchesCategory(category)).slice(0, limit).map(normalizePlace);
-  let query = supabase.from('places').select('id,name,category,description,address,city,state,postal_code,latitude,longitude,rating,review_count,is_verified').eq('is_active', true).order('name').limit(limit);
-  if (category !== 'all') query = query.eq('category', category);
-  const { data, error } = await query;
-  if (error) throw error;
-  return (data ?? []).map(normalizePlace);
-}
-
-export async function getPlace(id) {
-  if (!supabase) return normalizePlace(demoPlaces.find(place => String(place.id) === String(id)) ?? null);
-  const { data, error } = await supabase.from('places').select('id,name,category,description,address,city,state,postal_code,latitude,longitude,rating,review_count,is_verified').eq('id', id).eq('is_active', true).maybeSingle();
-  if (error) throw error;
-  return data ? normalizePlace(data) : null;
-}
-function matchesCategory(category) { return place => category === 'all' || place.category === category; }
+const demoPlaces=[{id:'demo-1',name:'Kleenest Coffee House',category:'cafe',rating:4.8,review_count:38,description:'A local coffee stop with a welcoming atmosphere.',address:'12 Main Street'},{id:'demo-2',name:'Main Street Market',category:'restaurant',rating:4.6,review_count:51,description:'A neighborhood restaurant serving the local community.',address:'24 Main Street'},{id:'demo-3',name:'River Road Fuel',category:'gas_station',rating:4.4,review_count:22,description:'Convenient fuel and everyday essentials.',address:'101 River Road'},{id:'demo-4',name:'Downtown Goods',category:'shopping',rating:4.7,review_count:17,description:'Independent local shopping and specialty goods.',address:'7 Market Avenue'},{id:'demo-5',name:'Riverside Park',category:'park',rating:4.9,review_count:29,description:'A clean outdoor space for walks, recreation, and events.',address:'1 Riverside Drive'}];
+export const CATEGORY_DEFINITIONS=[{slug:'restaurant',name:'Restaurants'},{slug:'cafe',name:'Cafes'},{slug:'gas_station',name:'Gas Stations'},{slug:'shopping',name:'Shopping'},{slug:'park',name:'Parks'},{slug:'service',name:'Services'},{slug:'restroom',name:'Bathrooms'},{slug:'health',name:'Health'},{slug:'public_safety',name:'Public Safety'}];
+export async function listCategories(){if(!supabase)return CATEGORY_DEFINITIONS;const{data,error}=await supabase.from('place_categories').select('slug,name').order('name');if(error)throw error;const existing=data??[],known=new Set(existing.map(x=>x.slug));return[...existing,...CATEGORY_DEFINITIONS.filter(x=>!known.has(x.slug))]}
+const fields='id,name,category,description,address,city,state,postal_code,latitude,longitude,rating,review_count,is_verified,location_id';
+export async function listPlaces({category='all',limit=100}={}){if(!supabase)return demoPlaces.filter(p=>category==='all'||p.category===category).slice(0,limit).map(normalizePlace);let q=supabase.from('places').select(fields).eq('is_active',true).order('name').limit(limit);if(category!=='all')q=q.eq('category',category);const{data,error}=await q;if(error)throw error;return(data??[]).map(normalizePlace)}
+export async function getPlace(id){if(!supabase)return normalizePlace(demoPlaces.find(p=>String(p.id)===String(id))??null);const{data,error}=await supabase.from('places').select(fields).eq('id',id).eq('is_active',true).maybeSingle();if(error)throw error;return data?normalizePlace(data):null}
