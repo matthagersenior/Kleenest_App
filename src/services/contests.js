@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { hasBusinessFeature, normalizeBusinessPlan } from '../domain/entitlements';
-import { getUserLeaderboard as getCanonicalUserLeaderboard } from './rewards';
+import { getUserLeaderboard as getCanonicalUserLeaderboard, recordProgressionMetric } from './rewards';
 
 async function requireUser() {
   if (!supabase) throw new Error('Supabase is not configured.');
@@ -31,42 +31,22 @@ async function requireBusinessContestAccess(businessId) {
 
 export const listActiveContests = (limit = 20) => rpc('home_active_contests', { p_limit: limit });
 export const joinContest = (contestId) => rpc('join_contest', { p_contest_id: contestId });
-export const submitContestEntry = (contestId, entry = {}) => rpc('submit_contest_entry', { p_contest_id: contestId, p_entry: entry });
+export async function submitContestEntry(contestId, entry = {}) {
+  const result = await rpc('submit_contest_entry', { p_contest_id: contestId, p_entry: entry });
+  await recordProgressionMetric({metric:'contest_entry',sourceType:'contest',sourceId:contestId,quantity:1,metadata:{entry}}).catch(()=>null);
+  return result;
+}
 export const getContestScore = (contestId, userId) => rpc('contest_score', { p_contest_id: contestId, p_user_id: userId });
 export const getUserLeaderboard = (limit = 25) => getCanonicalUserLeaderboard(limit);
 export const getBusinessLeaderboard = (metric, limit = 10) => rpc('get_business_leaderboard', { p_metric: metric, p_limit: limit });
 
 export async function createContest(businessId, payload) {
   await requireBusinessContestAccess(businessId);
-  return rpc('business_create_contest', {
-    p_business_id: businessId,
-    p_name: payload.name,
-    p_description: payload.description ?? '',
-    p_starts_at: payload.startsAt,
-    p_ends_at: payload.endsAt,
-    p_scoring_rules: payload.scoringRules ?? {},
-    p_rewards: payload.rewards ?? {},
-  });
+  return rpc('business_create_contest', {p_business_id:businessId,p_name:payload.name,p_description:payload.description??'',p_starts_at:payload.startsAt,p_ends_at:payload.endsAt,p_scoring_rules:payload.scoringRules??{},p_rewards:payload.rewards??{}});
 }
-
 export async function updateContest(businessId, contestId, payload) {
   await requireBusinessContestAccess(businessId);
-  return rpc('business_update_contest', {
-    p_business_id: businessId,
-    p_contest_id: contestId,
-    p_name: payload.name,
-    p_description: payload.description ?? '',
-    p_starts_at: payload.startsAt,
-    p_ends_at: payload.endsAt,
-    p_scoring_rules: payload.scoringRules ?? {},
-    p_rewards: payload.rewards ?? {},
-    p_status: payload.status ?? 'draft',
-  });
+  return rpc('business_update_contest', {p_business_id:businessId,p_contest_id:contestId,p_name:payload.name,p_description:payload.description??'',p_starts_at:payload.startsAt,p_ends_at:payload.endsAt,p_scoring_rules:payload.scoringRules??{},p_rewards:payload.rewards??{},p_status:payload.status??'draft'});
 }
-
-export async function deleteContest(businessId, contestId) {
-  await requireBusinessContestAccess(businessId);
-  return rpc('business_delete_contest', { p_business_id: businessId, p_contest_id: contestId });
-}
-
+export async function deleteContest(businessId, contestId) {await requireBusinessContestAccess(businessId);return rpc('business_delete_contest',{p_business_id:businessId,p_contest_id:contestId});}
 export const listBusinessContests = (businessId) => rpc('business_list_contests', { p_business_id: businessId });
