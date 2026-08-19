@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { submitObservation } from './observations';
+import { createCheckIn as createCanonicalCheckIn } from './checkins';
 function client(){if(!supabase)throw new Error('Supabase is not configured.');return supabase}
 async function user(){const {data:{user:u},error}=await client().auth.getUser();if(error)throw error;if(!u)throw new Error('Sign in to continue.');return u}
 export async function listReviews(locationId,{limit=30}={}){const {data,error}=await client().from('reviews').select('id,location_id,user_id,check_in_id,stars,cleanliness_pct,comment,status,business_reply,business_replied_at,created_at,profiles:user_id(display_name,avatar_url),review_photos(id,storage_path,mime_type,width,height,sort_order)').eq('location_id',locationId).order('created_at',{ascending:false}).limit(limit);if(error)throw error;return (data??[]).map(r=>({...r,rating:r.stars,body:r.comment,photos:r.review_photos||[]}))}
@@ -7,7 +8,8 @@ export async function createReview({placeId,checkInId=null,rating,cleanlinessPct
 export async function submitRestroomObservation({locationId,checkInId=null,observationType,cleanlinessPct=null,note=''}){return submitObservation({locationId,checkInId,observationType,cleanlinessPct,note})}
 export async function listObservationSummary(locationId){const {data,error}=await client().from('restroom_observations').select('id,observation_type,cleanliness_pct,confidence,created_at').eq('location_id',locationId).order('created_at',{ascending:false}).limit(20);if(error)throw error;return data??[]}
 export async function deleteReview(reviewId){await user();const {error}=await client().from('reviews').delete().eq('id',reviewId);if(error)throw error}
-export async function checkIn(placeId,qrToken=null){await user();const {data,error}=await client().rpc('create_check_in',{p_place_id:placeId,p_qr_token:qrToken});if(error)throw error;return data}
+// Compatibility wrapper for older consumers. All check-ins now terminate in the canonical service.
+export async function checkIn(placeId,qrToken=null){return createCanonicalCheckIn({placeId,qrToken})}
 export async function getRewardTransactions({limit=50}={}){await user();const {data,error}=await client().from('reward_transactions').select('id,check_in_id,points,reason,metadata,created_at').order('created_at',{ascending:false}).limit(limit);if(error)throw error;return data??[]}
 export async function replyToReview({businessId,reviewId,reply}){await user();if(!String(reply||'').trim())throw new Error('Reply cannot be empty.');const {data,error}=await client().rpc('business_reply_review',{p_business_id:businessId,p_review_id:reviewId,p_reply:String(reply).trim()});if(error)throw error;return data}
 export async function likeReview(reviewId){await user();const {data,error}=await client().rpc('toggle_review_like',{p_review_id:reviewId});if(error)throw error;return data}
