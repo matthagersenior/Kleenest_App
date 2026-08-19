@@ -2,98 +2,24 @@ import { normalizePlace } from '../domain/contracts';
 import { supabase } from '../lib/supabase';
 
 const demoPlaces=[
-  {id:'demo-restroom-1',name:'Kleenest Community Restroom',category:'restroom',rating:4.8,review_count:24,description:'A community-verified restroom with accessible facilities.',address:'100 Main Street',city:'Sparta',state:'IL',latitude:38.123,longitude:-89.701,cleanliness:'Excellent',cleanliness_pct:94,accessible:true,changing_table:true,bathroom_verification_status:'verified',bathroom_verification_count:18,bathroom_positive_count:17,bathroom_negative_count:1,is_verified:true},
-  {id:'demo-restroom-2',name:'Riverside Public Restroom',category:'restroom',rating:4.4,review_count:12,description:'Public restroom near the riverfront and walking trail.',address:'1 Riverside Drive',city:'Sparta',state:'IL',latitude:38.117,longitude:-89.696,cleanliness:'Good',cleanliness_pct:78,accessible:true,changing_table:false,bathroom_verification_status:'verified',bathroom_verification_count:9,bathroom_positive_count:7,bathroom_negative_count:2,is_verified:true},
-  {id:'demo-cafe',name:'Kleenest Coffee House',category:'cafe',rating:4.8,review_count:38,description:'A local coffee stop with a welcoming atmosphere.',address:'12 Main Street',latitude:38.627,longitude:-90.199},
-  {id:'demo-restaurant',name:'Main Street Market',category:'restaurant',rating:4.6,review_count:51,description:'A neighborhood restaurant serving the local community.',address:'24 Main Street',latitude:38.63,longitude:-90.205},
-  {id:'demo-gas',name:'River Road Fuel',category:'gas_station',rating:4.4,review_count:22,description:'Convenient fuel and everyday essentials.',address:'101 River Road',latitude:38.62,longitude:-90.19},
-  {id:'demo-shopping',name:'Downtown Goods',category:'shopping',rating:4.7,review_count:17,description:'Independent local shopping and specialty goods.',address:'7 Market Avenue',latitude:38.633,longitude:-90.2},
-  {id:'demo-park',name:'Riverside Park',category:'park',rating:4.9,review_count:29,description:'A clean outdoor space for walks, recreation, and events.',address:'1 Riverside Drive',latitude:38.615,longitude:-90.21},
+{id:'demo-restroom-1',name:'Kleenest Community Restroom',category:'restroom',rating:4.8,review_count:24,description:'A community-verified restroom with accessible facilities.',address:'100 Main Street',city:'Sparta',state:'IL',latitude:38.123,longitude:-89.701,cleanliness:'Excellent',cleanliness_pct:94,accessible:true,changing_table:true,bathroom_verification_status:'verified',bathroom_verification_count:18,bathroom_positive_count:17,bathroom_negative_count:1,is_verified:true,intelligence_score:91,freshness_label:'Observed this week'},
+{id:'demo-restroom-2',name:'Riverside Public Restroom',category:'restroom',rating:4.4,review_count:12,description:'Public restroom near the riverfront and walking trail.',address:'1 Riverside Drive',city:'Sparta',state:'IL',latitude:38.117,longitude:-89.696,cleanliness:'Good',cleanliness_pct:78,accessible:true,changing_table:false,bathroom_verification_status:'verified',bathroom_verification_count:9,bathroom_positive_count:7,bathroom_negative_count:2,is_verified:true,intelligence_score:76,freshness_label:'Observed this month'},
+{id:'demo-cafe',name:'Kleenest Coffee House',category:'cafe',rating:4.8,review_count:38,description:'A local coffee stop with a welcoming atmosphere.',address:'12 Main Street',latitude:38.627,longitude:-90.199},
+{id:'demo-restaurant',name:'Main Street Market',category:'restaurant',rating:4.6,review_count:51,description:'A neighborhood restaurant serving the local community.',address:'24 Main Street',latitude:38.63,longitude:-90.205},
+{id:'demo-gas',name:'River Road Fuel',category:'gas_station',rating:4.4,review_count:22,description:'Convenient fuel and everyday essentials.',address:'101 River Road',latitude:38.62,longitude:-90.19},
+{id:'demo-shopping',name:'Downtown Goods',category:'shopping',rating:4.7,review_count:17,description:'Independent local shopping and specialty goods.',address:'7 Market Avenue',latitude:38.633,longitude:-90.2},
+{id:'demo-park',name:'Riverside Park',category:'park',rating:4.9,review_count:29,description:'A clean outdoor space for walks, recreation, and events.',address:'1 Riverside Drive',latitude:38.615,longitude:-90.21}
 ];
 
-export const CATEGORY_DEFINITIONS=[
-  {slug:'restroom',name:'Bathrooms'},
-  {slug:'restaurant',name:'Restaurants'},
-  {slug:'cafe',name:'Cafes'},
-  {slug:'gas_station',name:'Gas Stations'},
-  {slug:'shopping',name:'Shopping'},
-  {slug:'park',name:'Parks'},
-  {slug:'service',name:'Services'},
-  {slug:'health',name:'Health'},
-  {slug:'public_safety',name:'Public Safety'},
-];
-
+export const CATEGORY_DEFINITIONS=[{slug:'restroom',name:'Bathrooms'},{slug:'restaurant',name:'Restaurants'},{slug:'cafe',name:'Cafes'},{slug:'gas_station',name:'Gas Stations'},{slug:'shopping',name:'Shopping'},{slug:'park',name:'Parks'},{slug:'service',name:'Services'},{slug:'health',name:'Health'},{slug:'public_safety',name:'Public Safety'}];
 const PLACE_FIELDS='id,name,category,description,address,city,state,postal_code,latitude,longitude,rating,review_count,is_verified,location_id,created_at,updated_at';
 const LOCATION_FIELDS='id,cleanliness,cleanliness_pct,accessible,changing_table,smart_bathroom,bathroom_verification_status,bathroom_verification_count,bathroom_positive_count,bathroom_negative_count,source,source_dataset,updated_at,created_at';
-
-function haversineKm(lat1,lon1,lat2,lon2){
-  const R=6371,rad=Math.PI/180,dLat=(lat2-lat1)*rad,dLon=(lon2-lon1)*rad;
-  const a=Math.sin(dLat/2)**2+Math.cos(lat1*rad)*Math.cos(lat2*rad)*Math.sin(dLon/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
-
-function addDistance(rows,userLocation){
-  if(!userLocation?.latitude||!userLocation?.longitude)return rows;
-  return rows.map(row=>row.latitude==null||row.longitude==null?row:{...row,distance_km:haversineKm(userLocation.latitude,userLocation.longitude,row.latitude,row.longitude),distance_miles:haversineKm(userLocation.latitude,userLocation.longitude,row.latitude,row.longitude)*0.621371});
-}
-
-function rankRestrooms(rows,{userLocation,sort='recommended'}={}){
-  const enriched=addDistance(rows,userLocation);
-  if(sort==='distance'&&userLocation)return [...enriched].sort((a,b)=>(a.distance_km??Infinity)-(b.distance_km??Infinity));
-  if(sort==='cleanliness')return [...enriched].sort((a,b)=>(b.cleanliness_pct??-1)-(a.cleanliness_pct??-1));
-  if(sort==='verified')return [...enriched].sort((a,b)=>(b.bathroom_verification_count??0)-(a.bathroom_verification_count??0));
-  return [...enriched].sort((a,b)=>{
-    const score=(p)=>(p.cleanliness_pct??50)*0.45+(p.bathroom_verification_count??0)*1.5+(p.rating??0)*8-(p.distance_km??0)*2;
-    return score(b)-score(a);
-  });
-}
-
-async function enrichWithLocationData(rows){
-  if(!supabase || !rows.length)return rows;
-  const ids=[...new Set(rows.map(r=>r.location_id).filter(Boolean))];
-  if(!ids.length)return rows;
-  const {data,error}=await supabase.from('locations').select(LOCATION_FIELDS).in('id',ids);
-  if(error)throw error;
-  const byId=new Map((data??[]).map(location=>[String(location.id),location]));
-  return rows.map(row=>({...row,...(byId.get(String(row.location_id))||{})}));
-}
-
-export async function listCategories(){
-  if(!supabase)return CATEGORY_DEFINITIONS;
-  const{data,error}=await supabase.from('place_categories').select('slug,name').order('name');
-  if(error)return CATEGORY_DEFINITIONS;
-  const existing=data??[],known=new Set(existing.map(x=>x.slug));
-  return[...CATEGORY_DEFINITIONS.filter(x=>!known.has(x.slug)),...existing];
-}
-
-export async function listPlaces({category='all',limit=100,bounds=null,search='',userLocation=null,sort='recommended',amenities={}}={}){
-  if(!supabase){
-    let rows=demoPlaces.filter(p=>(category==='all'||p.category===category)&&(!search||p.name.toLowerCase().includes(search.toLowerCase())));
-    if(category==='restroom')rows=rows.filter(p=>(!amenities.accessible||p.accessible)&&(!amenities.changing_table||p.changing_table));
-    return rankRestrooms(rows,{userLocation,sort}).slice(0,limit).map(normalizePlace);
-  }
-  let q=supabase.from('places').select(PLACE_FIELDS).eq('is_active',true).limit(limit);
-  if(category!=='all')q=q.eq('category',category);
-  if(search.trim())q=q.ilike('name',`%${search.trim()}%`);
-  if(bounds){const{south,west,north,east}=bounds;q=q.gte('latitude',south).lte('latitude',north).gte('longitude',west).lte('longitude',east)}
-  const{data,error}=await q;
-  if(error)throw error;
-  const enriched=await enrichWithLocationData(data??[]);
-  let filtered=enriched;
-  if(category==='restroom')filtered=filtered.filter(p=>(!amenities.accessible||p.accessible)&&(!amenities.changing_table||p.changing_table));
-  const ranked=category==='restroom'?rankRestrooms(filtered,{userLocation,sort}):addDistance(filtered,userLocation);
-  return ranked.map(normalizePlace).slice(0,limit);
-}
-
-export async function getPlace(id){
-  if(!supabase)return normalizePlace(demoPlaces.find(p=>String(p.id)===String(id))??null);
-  const{data,error}=await supabase.from('places').select(PLACE_FIELDS).eq('id',id).eq('is_active',true).maybeSingle();
-  if(error)throw error;
-  if(!data)return null;
-  const [enriched]=await enrichWithLocationData([data]);
-  return normalizePlace(enriched);
-}
-
-export function filterRestrooms(places,{accessible=false,changingTable=false,minCleanliness=0}={}){
-  return places.filter(p=>(!accessible||p.accessible)&&(!changingTable||p.changing_table)&&(p.cleanliness_pct==null||p.cleanliness_pct>=minCleanliness));
-}
+function haversineKm(lat1,lon1,lat2,lon2){const R=6371,rad=Math.PI/180,dLat=(lat2-lat1)*rad,dLon=(lon2-lon1)*rad,a=Math.sin(dLat/2)**2+Math.cos(lat1*rad)*Math.cos(lat2*rad)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))}
+function addDistance(rows,userLocation){if(!userLocation?.latitude||!userLocation?.longitude)return rows;return rows.map(row=>row.latitude==null||row.longitude==null?row:{...row,distance_km:haversineKm(userLocation.latitude,userLocation.longitude,row.latitude,row.longitude),distance_miles:haversineKm(userLocation.latitude,userLocation.longitude,row.latitude,row.longitude)*.621371})}
+function rankRestrooms(rows,{userLocation,sort='recommended'}={}){const enriched=addDistance(rows,userLocation);if(sort==='distance'&&userLocation)return[...enriched].sort((a,b)=>(a.distance_km??Infinity)-(b.distance_km??Infinity));if(sort==='cleanliness')return[...enriched].sort((a,b)=>(b.cleanliness_pct??-1)-(a.cleanliness_pct??-1));if(sort==='verified')return[...enriched].sort((a,b)=>(b.bathroom_verification_count??0)-(a.bathroom_verification_count??0));return[...enriched].sort((a,b)=>{const score=p=>(p.intelligence_score??((p.cleanliness_pct??50)*.55+Math.min(20,(p.bathroom_verification_count??0)*2)))-(p.distance_km??0)*2;return score(b)-score(a)})}
+async function enrichWithLocationData(rows){if(!supabase||!rows.length)return rows;const ids=[...new Set(rows.map(r=>r.location_id).filter(Boolean))];if(!ids.length)return rows;const{data,error}=await supabase.from('locations').select(LOCATION_FIELDS).in('id',ids);if(error)throw error;const byId=new Map((data??[]).map(location=>[String(location.id),location]));return rows.map(row=>({...row,...(byId.get(String(row.location_id))||{})}))}
+async function enrichWithIntelligence(rows){if(!supabase||!rows.length)return rows;const ids=rows.map(r=>r.id).filter(Boolean);if(!ids.length)return rows;const{data,error}=await supabase.from('restroom_intelligence').select('place_id,intelligence_score,freshness_label,last_observed_at,age_days,community_agreement,has_recent_conflict').in('place_id',ids);if(error)return rows;const byId=new Map((data??[]).map(i=>[String(i.place_id),i]));return rows.map(row=>({...row,...(byId.get(String(row.id))||{})}))}
+export async function listCategories(){if(!supabase)return CATEGORY_DEFINITIONS;const{data,error}=await supabase.from('place_categories').select('slug,name').order('name');if(error)return CATEGORY_DEFINITIONS;const existing=data??[],known=new Set(existing.map(x=>x.slug));return[...CATEGORY_DEFINITIONS.filter(x=>!known.has(x.slug)),...existing]}
+export async function listPlaces({category='all',limit=100,bounds=null,search='',userLocation=null,sort='recommended',amenities={}}={}){if(!supabase){let rows=demoPlaces.filter(p=>(category==='all'||p.category===category)&&(!search||p.name.toLowerCase().includes(search.toLowerCase())));if(category==='restroom')rows=rows.filter(p=>(!amenities.accessible||p.accessible)&&(!amenities.changing_table||p.changing_table));return rankRestrooms(rows,{userLocation,sort}).slice(0,limit).map(normalizePlace)}let q=supabase.from('places').select(PLACE_FIELDS).eq('is_active',true).limit(limit);if(category!=='all')q=q.eq('category',category);if(search.trim())q=q.ilike('name',`%${search.trim()}%`);if(bounds){const{south,west,north,east}=bounds;q=q.gte('latitude',south).lte('latitude',north).gte('longitude',west).lte('longitude',east)}const{data,error}=await q;if(error)throw error;let enriched=await enrichWithLocationData(data??[]);if(category==='restroom')enriched=await enrichWithIntelligence(enriched);if(category==='restroom')enriched=enriched.filter(p=>(!amenities.accessible||p.accessible)&&(!amenities.changing_table||p.changing_table));const ranked=category==='restroom'?rankRestrooms(enriched,{userLocation,sort}):addDistance(enriched,userLocation);return ranked.map(normalizePlace).slice(0,limit)}
+export async function getPlace(id){if(!supabase)return normalizePlace(demoPlaces.find(p=>String(p.id)===String(id))??null);const{data,error}=await supabase.from('places').select(PLACE_FIELDS).eq('id',id).eq('is_active',true).maybeSingle();if(error)throw error;if(!data)return null;let[enriched]=await enrichWithLocationData([data]);if(enriched.category==='restroom')[enriched]=await enrichWithIntelligence([enriched]);return normalizePlace(enriched)}
+export function filterRestrooms(places,{accessible=false,changingTable=false,minCleanliness=0}={}){return places.filter(p=>(!accessible||p.accessible)&&(!changingTable||p.changing_table)&&(p.cleanliness_pct==null||p.cleanliness_pct>=minCleanliness))}
