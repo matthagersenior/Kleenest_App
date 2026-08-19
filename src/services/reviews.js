@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { syncReviewRewards } from './rewards';
+import { recordReviewSubmitted } from './events';
+import { recordBusinessEngagement } from './businessLifecycle';
 
 async function requireUser(){
   if(!supabase) throw new Error('Supabase is not configured.');
@@ -40,6 +42,9 @@ export async function createReview({locationId,stars,comment,cleanlinessPct=null
   });
   if(error) throw error;
   const row=Array.isArray(data)?data[0]:data;
+  if(row?.location_id)recordReviewSubmitted({locationId:row.location_id,reviewId:row.id,rating:row.stars}).catch(()=>null);
+  // Reputation analytics are secondary to the authoritative review write.
+  if(row?.business_id)recordBusinessEngagement(row.business_id,{locationId:row.location_id,activityType:'review_submitted',source:'review',metadata:{reviewId:row.id,rating:row.stars}}).catch(()=>null);
   if(row?.id)syncReviewRewards(row.id).catch(()=>null);
   return data;
 }
