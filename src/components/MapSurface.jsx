@@ -1,44 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useEffect,useRef } from 'react';
 import L from 'leaflet';
-
-const DEFAULT_CENTER = [38.627, -90.199];
-
-export default function MapSurface({ places = [], onSelect }) {
-  const nodeRef = useRef(null);
-  const mapRef = useRef(null);
-  const layerRef = useRef(null);
-
-  useEffect(() => {
-    if (!nodeRef.current || mapRef.current) return;
-    const map = L.map(nodeRef.current, { zoomControl: true, attributionControl: true }).setView(DEFAULT_CENTER, 11);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors',
-    }).addTo(map);
-    layerRef.current = L.layerGroup().addTo(map);
-    mapRef.current = map;
-    return () => { map.remove(); mapRef.current = null; layerRef.current = null; };
-  }, []);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    const layer = layerRef.current;
-    if (!map || !layer) return;
-    layer.clearLayers();
-    const valid = places.filter(p => Number.isFinite(Number(p.latitude)) && Number.isFinite(Number(p.longitude)));
-    valid.forEach(place => {
-      const marker = L.marker([Number(place.latitude), Number(place.longitude)]).addTo(layer);
-      const category = String(place.category || 'service').replaceAll('_', ' ');
-      marker.bindPopup(`<strong>${escapeHtml(place.name)}</strong><br><span>${escapeHtml(category)}</span><br><a href="/place/${encodeURIComponent(place.id)}">Open details</a>`);
-      marker.on('click', () => onSelect?.(place));
-    });
-    if (valid.length === 1) map.setView([valid[0].latitude, valid[0].longitude], 15);
-    else if (valid.length > 1) map.fitBounds(L.latLngBounds(valid.map(p => [Number(p.latitude), Number(p.longitude)])), { padding: [30, 30], maxZoom: 14 });
-  }, [places, onSelect]);
-
-  return <div ref={nodeRef} className="leaflet-map" aria-label="Kleenest places map" />;
-}
-
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
-}
+const DEFAULT_CENTER=[38.627,-90.199];
+export default function MapSurface({places=[],onSelect,onBoundsChange}){const nodeRef=useRef(null),mapRef=useRef(null),layerRef=useRef(null);useEffect(()=>{if(!nodeRef.current||mapRef.current)return;const map=L.map(nodeRef.current,{zoomControl:true,attributionControl:true}).setView(DEFAULT_CENTER,11);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);layerRef.current=L.layerGroup().addTo(map);mapRef.current=map;const report=()=>{const b=map.getBounds();onBoundsChange?.({south:b.getSouth(),west:b.getWest(),north:b.getNorth(),east:b.getEast()})};map.on('moveend',report);report();return()=>{map.off('moveend',report);map.remove();mapRef.current=null;layerRef.current=null}},[onBoundsChange]);useEffect(()=>{const map=mapRef.current,layer=layerRef.current;if(!map||!layer)return;layer.clearLayers();const valid=places.filter(p=>Number.isFinite(Number(p.latitude))&&Number.isFinite(Number(p.longitude)));valid.forEach(place=>{const marker=L.marker([Number(place.latitude),Number(place.longitude)]).addTo(layer);const category=String(place.category||'service').replaceAll('_',' ');marker.bindPopup(`<strong>${escapeHtml(place.name)}</strong><br><span>${escapeHtml(category)}</span><br><a href="/place/${encodeURIComponent(place.id)}">Open details</a>`);marker.on('click',()=>onSelect?.(place))});if(valid.length===1)map.setView([valid[0].latitude,valid[0].longitude],15);else if(valid.length>1)map.fitBounds(L.latLngBounds(valid.map(p=>[Number(p.latitude),Number(p.longitude)])),{padding:[30,30],maxZoom:14})},[places,onSelect]);return <div ref={nodeRef} className="leaflet-map" aria-label="Kleenest places map"/>}
+function escapeHtml(value){return String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]))}
