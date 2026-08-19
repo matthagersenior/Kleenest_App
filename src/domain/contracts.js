@@ -1,33 +1,5 @@
 export const ACCOUNT_TYPES = Object.freeze({ consumer: 'consumer', business: 'business', admin: 'admin' });
-
-export const PLACE_CATEGORIES = Object.freeze([
-  'restaurant', 'cafe', 'gas_station', 'shopping', 'park', 'service',
-]);
-
-export const BUSINESS_FEATURES = Object.freeze([
-  'profile', 'locations', 'reviews', 'promotions', 'campaigns', 'contests',
-  'events', 'qr', 'analytics',
-]);
-
-export const QR_SCOPES = Object.freeze({
-  checkin: 'checkin',
-  reward: 'reward',
-  contest: 'contest',
-});
-
-export function normalizePlace(place) {
-  if (!place) return null;
-  return {
-    id: String(place.id),
-    name: place.name ?? 'Unnamed place',
-    category: place.category ?? 'service',
-    rating: Number(place.rating ?? 0),
-    reviews: Number(place.review_count ?? place.reviews ?? 0),
-    distance: place.distance ?? null,
-    latitude: place.latitude ?? null,
-    longitude: place.longitude ?? null,
-    description: place.description ?? '',
-    address: place.address ?? [place.city, place.state, place.postal_code].filter(Boolean).join(', '),
-    verified: Boolean(place.is_verified),
-  };
-}
+export const PLACE_CATEGORIES = Object.freeze(['restaurant','cafe','gas_station','shopping','park','service','restroom','health','public_safety']);
+export const BUSINESS_FEATURES = Object.freeze(['profile','locations','reviews','promotions','campaigns','contests','events','qr','analytics']);
+export const QR_SCOPES = Object.freeze({checkin:'checkin',reward:'reward',contest:'contest'});
+export function normalizePlace(place){if(!place)return null;return{id:String(place.id),location_id:place.location_id?String(place.location_id):null,name:place.name??'Unnamed place',category:place.category??'service',rating:Number(place.rating??0),reviews:Number(place.review_count??place.reviews??0),distance:place.distance??null,latitude:place.latitude??null,longitude:place.longitude??null,description:place.description??'',address:place.address??[place.city,place.state,place.postal_code].filter(Boolean).join(', '),verified:Boolean(place.is_verified)}}
