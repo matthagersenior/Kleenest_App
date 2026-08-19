@@ -2,7 +2,7 @@ import {useEffect,useState} from 'react';
 import {BarChart3,Building2,ChevronRight,QrCode,RefreshCw,ShieldCheck,Star,ToggleLeft,ToggleRight} from 'lucide-react';
 import {Link,useSearchParams} from 'react-router-dom';
 import {listBusinesses,listLocations,listBusinessQrs,getAnalytics,getLocationIntelligence,getReviewAnalytics,setQrActive,listCampaigns,listContests,listEvents,listPromotions} from '../services/business';
-import {getBusinessLifecycleAnalytics} from '../services/businessAnalytics';
+import {getBusinessLifecycleAnalytics} from '../services/businessLifecycle';
 import {useAuth} from '../context/AuthContext';
 import BusinessManagePage from './BusinessManagePage';
 import {intelligenceLabel,trustSummary} from '../services/intelligence';
