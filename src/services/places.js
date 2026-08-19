@@ -1,8 +1,68 @@
 import { normalizePlace } from '../domain/contracts';
 import { supabase } from '../lib/supabase';
-const demoPlaces=[{id:'demo-1',name:'Kleenest Coffee House',category:'cafe',rating:4.8,review_count:38,description:'A local coffee stop with a welcoming atmosphere.',address:'12 Main Street',latitude:38.627,longitude:-90.199},{id:'demo-2',name:'Main Street Market',category:'restaurant',rating:4.6,review_count:51,description:'A neighborhood restaurant serving the local community.',address:'24 Main Street',latitude:38.63,longitude:-90.205},{id:'demo-3',name:'River Road Fuel',category:'gas_station',rating:4.4,review_count:22,description:'Convenient fuel and everyday essentials.',address:'101 River Road',latitude:38.62,longitude:-90.19},{id:'demo-4',name:'Downtown Goods',category:'shopping',rating:4.7,review_count:17,description:'Independent local shopping and specialty goods.',address:'7 Market Avenue',latitude:38.633,longitude:-90.2},{id:'demo-5',name:'Riverside Park',category:'park',rating:4.9,review_count:29,description:'A clean outdoor space for walks, recreation, and events.',address:'1 Riverside Drive',latitude:38.615,longitude:-90.21}];
-export const CATEGORY_DEFINITIONS=[{slug:'restaurant',name:'Restaurants'},{slug:'cafe',name:'Cafes'},{slug:'gas_station',name:'Gas Stations'},{slug:'shopping',name:'Shopping'},{slug:'park',name:'Parks'},{slug:'service',name:'Services'},{slug:'restroom',name:'Bathrooms'},{slug:'health',name:'Health'},{slug:'public_safety',name:'Public Safety'}];
-export async function listCategories(){if(!supabase)return CATEGORY_DEFINITIONS;if(!supabase)return CATEGORY_DEFINITIONS;const{data,error}=await supabase.from('place_categories').select('slug,name').order('name');if(error)throw error;const existing=data??[],known=new Set(existing.map(x=>x.slug));return[...existing,...CATEGORY_DEFINITIONS.filter(x=>!known.has(x.slug))]}
-const fields='id,name,category,description,address,city,state,postal_code,latitude,longitude,rating,review_count,is_verified,location_id';
-export async function listPlaces({category='all',limit=100,bounds=null,search=''}={}){if(!supabase)return demoPlaces.filter(p=>(category==='all'||p.category===category)&&(!search||p.name.toLowerCase().includes(search.toLowerCase()))).slice(0,limit).map(normalizePlace);let q=supabase.from('places').select(fields).eq('is_active',true).order('name').limit(limit);if(category!=='all')q=q.eq('category',category);if(search.trim())q=q.ilike('name',`%${search.trim()}%`);if(bounds){const{south,west,north,east}=bounds;q=q.gte('latitude',south).lte('latitude',north).gte('longitude',west).lte('longitude',east)}const{data,error}=await q;if(error)throw error;return(data??[]).map(normalizePlace)}
-export async function getPlace(id){if(!supabase)return normalizePlace(demoPlaces.find(p=>String(p.id)===String(id))??null);const{data,error}=await supabase.from('places').select(fields).eq('id',id).eq('is_active',true).maybeSingle();if(error)throw error;return data?normalizePlace(data):null}
+
+const demoPlaces=[
+  {id:'demo-restroom-1',name:'Kleenest Community Restroom',category:'restroom',rating:4.8,review_count:24,description:'A community-verified restroom with accessible facilities.',address:'100 Main Street',city:'Sparta',state:'IL',latitude:38.123,longitude:-89.701,cleanliness:'Excellent',cleanliness_pct:94,accessible:true,changing_table:true,bathroom_verification_status:'verified',bathroom_verification_count:18,bathroom_positive_count:17,bathroom_negative_count:1,is_verified:true},
+  {id:'demo-restroom-2',name:'Riverside Public Restroom',category:'restroom',rating:4.4,review_count:12,description:'Public restroom near the riverfront and walking trail.',address:'1 Riverside Drive',city:'Sparta',state:'IL',latitude:38.117,longitude:-89.696,cleanliness:'Good',cleanliness_pct:78,accessible:true,changing_table:false,bathroom_verification_status:'verified',bathroom_verification_count:9,bathroom_positive_count:7,bathroom_negative_count:2,is_verified:true},
+  {id:'demo-cafe',name:'Kleenest Coffee House',category:'cafe',rating:4.8,review_count:38,description:'A local coffee stop with a welcoming atmosphere.',address:'12 Main Street',latitude:38.627,longitude:-90.199},
+  {id:'demo-restaurant',name:'Main Street Market',category:'restaurant',rating:4.6,review_count:51,description:'A neighborhood restaurant serving the local community.',address:'24 Main Street',latitude:38.63,longitude:-90.205},
+  {id:'demo-gas',name:'River Road Fuel',category:'gas_station',rating:4.4,review_count:22,description:'Convenient fuel and everyday essentials.',address:'101 River Road',latitude:38.62,longitude:-90.19},
+  {id:'demo-shopping',name:'Downtown Goods',category:'shopping',rating:4.7,review_count:17,description:'Independent local shopping and specialty goods.',address:'7 Market Avenue',latitude:38.633,longitude:-90.2},
+  {id:'demo-park',name:'Riverside Park',category:'park',rating:4.9,review_count:29,description:'A clean outdoor space for walks, recreation, and events.',address:'1 Riverside Drive',latitude:38.615,longitude:-90.21},
+];
+
+export const CATEGORY_DEFINITIONS=[
+  {slug:'restroom',name:'Bathrooms'},
+  {slug:'restaurant',name:'Restaurants'},
+  {slug:'cafe',name:'Cafes'},
+  {slug:'gas_station',name:'Gas Stations'},
+  {slug:'shopping',name:'Shopping'},
+  {slug:'park',name:'Parks'},
+  {slug:'service',name:'Services'},
+  {slug:'health',name:'Health'},
+  {slug:'public_safety',name:'Public Safety'},
+];
+
+const PLACE_FIELDS='id,name,category,description,address,city,state,postal_code,latitude,longitude,rating,review_count,is_verified,location_id,created_at,updated_at';
+const LOCATION_FIELDS='id,cleanliness,cleanliness_pct,accessible,changing_table,smart_bathroom,bathroom_verification_status,bathroom_verification_count,bathroom_positive_count,bathroom_negative_count,source,source_dataset,updated_at,created_at';
+
+async function enrichWithLocationData(rows){
+  if(!supabase || !rows.length)return rows;
+  const ids=[...new Set(rows.map(r=>r.location_id).filter(Boolean))];
+  if(!ids.length)return rows;
+  const {data,error}=await supabase.from('locations').select(LOCATION_FIELDS).in('id',ids);
+  if(error)throw error;
+  const byId=new Map((data??[]).map(location=>[String(location.id),location]));
+  return rows.map(row=>({...row,...(byId.get(String(row.location_id))||{})}));
+}
+
+export async function listCategories(){
+  if(!supabase)return CATEGORY_DEFINITIONS;
+  const{data,error}=await supabase.from('place_categories').select('slug,name').order('name');
+  if(error)return CATEGORY_DEFINITIONS;
+  const existing=data??[],known=new Set(existing.map(x=>x.slug));
+  return[...CATEGORY_DEFINITIONS.filter(x=>!known.has(x.slug)),...existing];
+}
+
+export async function listPlaces({category='all',limit=100,bounds=null,search=''}={}){
+  if(!supabase){
+    return demoPlaces.filter(p=>(category==='all'||p.category===category)&&(!search||p.name.toLowerCase().includes(search.toLowerCase()))).slice(0,limit).map(normalizePlace);
+  }
+  let q=supabase.from('places').select(PLACE_FIELDS).eq('is_active',true).order('name').limit(limit);
+  if(category!=='all')q=q.eq('category',category);
+  if(search.trim())q=q.ilike('name',`%${search.trim()}%`);
+  if(bounds){const{south,west,north,east}=bounds;q=q.gte('latitude',south).lte('latitude',north).gte('longitude',west).lte('longitude',east)}
+  const{data,error}=await q;
+  if(error)throw error;
+  const enriched=await enrichWithLocationData(data??[]);
+  return enriched.map(normalizePlace);
+}
+
+export async function getPlace(id){
+  if(!supabase)return normalizePlace(demoPlaces.find(p=>String(p.id)===String(id))??null);
+  const{data,error}=await supabase.from('places').select(PLACE_FIELDS).eq('id',id).eq('is_active',true).maybeSingle();
+  if(error)throw error;
+  if(!data)return null;
+  const [enriched]=await enrichWithLocationData([data]);
+  return normalizePlace(enriched);
+}
