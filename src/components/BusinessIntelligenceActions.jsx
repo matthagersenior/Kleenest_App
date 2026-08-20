@@ -23,7 +23,7 @@ export default function BusinessIntelligenceActions({ businessId, items = [], lo
         window.location.assign(`/fleet?location=${encodeURIComponent(location.id)}`); return;
       }
       window.dispatchEvent(new CustomEvent('kleenest:intelligence-updated', { detail: { locationId: location.id, action: type } }));
-      onComplete?.();
+      await onComplete?.();
     } catch (error) { setMessage(error.message || 'Unable to complete the intelligence action.'); }
     finally { setBusy(null); }
   }
