@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { signIn, signUp, signInWithGoogle } from '../services/auth';
 
-export default function AuthModal({ onClose }) {
+export default function AuthModal({ open = true, onClose }) {
   const [mode, setMode] = useState('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [status, setStatus] = useState({ loading: false, error: '', success: '' });
+
+  if (!open) return null;
 
   async function submit(event) {
     event.preventDefault();
@@ -28,7 +30,7 @@ export default function AuthModal({ onClose }) {
   }
 
   return <div className="modal-backdrop" onMouseDown={onClose}><div className="auth-modal" onMouseDown={e => e.stopPropagation()}>
-    <button className="modal-close" onClick={onClose}>×</button>
+    <button className="modal-close" onClick={onClose} aria-label="Close sign in">×</button>
     <span className="eyebrow">KLEENEST ACCOUNT</span><h2>{mode === 'signin' ? 'Welcome back' : 'Create your account'}</h2>
     <form onSubmit={submit}>{mode === 'signup' && <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Full name" autoComplete="name" required />}<input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" autoComplete="email" required /><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} minLength={6} required /><button className="primary full" disabled={status.loading}>{status.loading ? 'Working…' : mode === 'signin' ? 'Sign in' : 'Create account'}</button></form>
     <button className="secondary full" onClick={google} disabled={status.loading}>Continue with Google</button>
