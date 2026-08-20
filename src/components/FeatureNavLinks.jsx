@@ -2,6 +2,7 @@ import {Link} from 'react-router-dom';
 import {Bell,Gift,Map,Medal,Route as RouteIcon,Sparkles,Trophy,Users,Compass,UserRound,Star} from 'lucide-react';
 import {useAuth} from '../context/AuthContext';
 import {hasCapability} from '../domain/capabilities';
+import './FeatureNavLinks.css';
 
 export default function FeatureNavLinks({business=false}){
   const{authenticated,capabilities=[]}=useAuth();
