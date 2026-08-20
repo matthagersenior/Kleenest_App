@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { BarChart3, Building2, CalendarDays, Megaphone, QrCode, RefreshCw, ShieldCheck, Star, Trophy, Users, Zap, ChevronDown } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { listBusinesses, listLocations, listBusinessQrs, getAnalytics, getLocationIntelligence, getReviewAnalytics, listCampaigns, listContests, listEvents, listPromotions, setQrActive } from '../services/business';
+import { listBusinesses, listLocations, listBusinessQrs, getAnalytics, getLocationIntelligence, getReviewAnalytics, listContests, setQrActive } from '../services/business';
+import { listCampaigns, listEvents, listPromotions } from '../services/businessCampaigns';
 import { getBusinessIntelligence, executeIntelligenceAction, intelligenceLabel, trustSummary } from '../services/intelligence';
 import { getBusinessLifecycleAnalytics } from '../services/businessLifecycle';
 import { useAuth } from '../context/AuthContext';
