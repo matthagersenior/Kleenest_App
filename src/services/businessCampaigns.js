@@ -42,3 +42,6 @@ export async function listBusinessEngagement(businessId, { limit = 100 } = {}) {
   if (error) throw error;
   return data ?? [];
 }
+
+// Compatibility export for dashboard consumers; business.js owns the canonical contest RPC.
+export { listContests } from './business';
