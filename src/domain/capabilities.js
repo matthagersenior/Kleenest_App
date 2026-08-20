@@ -1,32 +1,60 @@
-const ROLE_CAPABILITIES = {
-  consumer: ['consumer'],
-  user: ['consumer'],
-  premium: ['consumer', 'premium'],
-  business: ['consumer', 'business'],
-  owner: ['consumer', 'business'],
-  fleet: ['consumer', 'fleet'],
-  admin: ['consumer', 'admin', 'business', 'fleet'],
-  platform_admin: ['consumer', 'admin', 'business', 'fleet'],
-  super_admin: ['consumer', 'admin', 'business', 'fleet'],
-};
+export const CAPABILITIES = Object.freeze({
+  CONSUMER: 'consumer',
+  PREMIUM: 'premium',
+  BUSINESS: 'business',
+  FLEET: 'fleet',
+  ADMIN: 'admin',
+});
+
+const ROLE_CAPABILITIES = Object.freeze({
+  consumer: [CAPABILITIES.CONSUMER],
+  user: [CAPABILITIES.CONSUMER],
+  premium: [CAPABILITIES.CONSUMER, CAPABILITIES.PREMIUM],
+  business: [CAPABILITIES.CONSUMER, CAPABILITIES.BUSINESS],
+  owner: [CAPABILITIES.CONSUMER, CAPABILITIES.BUSINESS],
+  fleet: [CAPABILITIES.CONSUMER, CAPABILITIES.FLEET],
+  admin: [CAPABILITIES.CONSUMER, CAPABILITIES.ADMIN, CAPABILITIES.BUSINESS, CAPABILITIES.FLEET],
+  platform_admin: [CAPABILITIES.CONSUMER, CAPABILITIES.ADMIN, CAPABILITIES.BUSINESS, CAPABILITIES.FLEET],
+  super_admin: [CAPABILITIES.CONSUMER, CAPABILITIES.ADMIN, CAPABILITIES.BUSINESS, CAPABILITIES.FLEET],
+});
+
+const LEGACY_ROLE_MAP = Object.freeze({
+  user: CAPABILITIES.CONSUMER,
+  owner: CAPABILITIES.BUSINESS,
+  platform_admin: CAPABILITIES.ADMIN,
+  super_admin: CAPABILITIES.ADMIN,
+});
 
 export function normalizeCapabilities(profile) {
   const role = String(profile?.role || '').trim().toLowerCase();
-  const capabilities = new Set(ROLE_CAPABILITIES[role] || ['consumer']);
-  if (profile?.subscription_tier && String(profile.subscription_tier).toLowerCase() !== 'free') capabilities.add('premium');
-  if (profile?.is_business_user) capabilities.add('business');
+  const capabilities = new Set(ROLE_CAPABILITIES[role] || [CAPABILITIES.CONSUMER]);
+  if (profile?.subscription_tier && String(profile.subscription_tier).toLowerCase() !== 'free') capabilities.add(CAPABILITIES.PREMIUM);
+  if (profile?.is_business_user) capabilities.add(CAPABILITIES.BUSINESS);
   if (profile?.is_admin) {
-    capabilities.add('admin');
-    capabilities.add('business');
-    capabilities.add('fleet');
+    capabilities.add(CAPABILITIES.ADMIN);
+    capabilities.add(CAPABILITIES.BUSINESS);
+    capabilities.add(CAPABILITIES.FLEET);
   }
   return Object.freeze([...capabilities]);
 }
 
+export function normalizeCapability(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  return LEGACY_ROLE_MAP[normalized] || normalized;
+}
+
 export function hasCapability(capabilities, capability) {
-  return Array.isArray(capabilities) && capabilities.includes(capability);
+  return Array.isArray(capabilities) && capabilities.includes(normalizeCapability(capability));
 }
 
 export function hasAnyCapability(capabilities, required = []) {
   return required.length === 0 || required.some(capability => hasCapability(capabilities, capability));
+}
+
+export function hasAllCapabilities(capabilities, required = []) {
+  return required.every(capability => hasCapability(capabilities, capability));
+}
+
+export function capabilitiesForRole(role) {
+  return Object.freeze([...(ROLE_CAPABILITIES[String(role || '').trim().toLowerCase()] || [CAPABILITIES.CONSUMER])]);
 }
