@@ -31,7 +31,7 @@ export default function BusinessIntelligenceActions({ businessId, items = [], lo
     setError(null);
     try {
       if (config.action) {
-        await executeIntelligenceAction(businessId, { action: config.action, locationId }, {
+        const result = await executeIntelligenceAction(businessId, { action: config.action, locationId }, {
           locationId,
           title: type === 'demand_opportunity'
             ? `Local demand offer — ${location.name || 'your location'}`
@@ -42,9 +42,11 @@ export default function BusinessIntelligenceActions({ businessId, items = [], lo
           name: `Quality improvement — ${location.name || 'location'}`,
           goal: 'Improve community experience and review sentiment.'
         });
-        window.dispatchEvent(new CustomEvent('kleenest:intelligence-updated', { detail: { locationId, action: config.action } }));
-        await onComplete?.();
-        setMessage('Intelligence action completed.');
+        const detail = { locationId, action: config.action, result, source: 'business_intelligence' };
+        window.dispatchEvent(new CustomEvent('kleenest:intelligence-action-completed', { detail }));
+        window.dispatchEvent(new CustomEvent('kleenest:intelligence-updated', { detail }));
+        await onComplete?.(detail);
+        setMessage(`${config.label} completed for ${location.name || 'the selected location'}.`);
       } else if (type === 'high_activity_zone') {
         window.location.assign(`/fleet?location=${encodeURIComponent(locationId)}`);
       } else {
