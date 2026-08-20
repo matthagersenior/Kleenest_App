@@ -1,5 +1,12 @@
 import { supabase } from '../lib/supabase';
 
+const APP_BASE_PATH = '/Kleenest_App';
+
+function appUrl(path = '/') {
+  const suffix = path.startsWith('/') ? path : `/${path}`;
+  return `${window.location.origin}${APP_BASE_PATH}${suffix}`;
+}
+
 export async function getCurrentUser() {
   if (!supabase) return null;
   const { data, error } = await supabase.auth.getUser();
@@ -9,14 +16,7 @@ export async function getCurrentUser() {
 
 export async function signUp({ email, password, fullName = '' }) {
   const client = requireClient();
-  return client.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { full_name: fullName },
-      emailRedirectTo: window.location.origin,
-    },
-  });
+  return client.auth.signUp({ email, password, options: { data: { full_name: fullName }, emailRedirectTo: appUrl('/profile') } });
 }
 
 export async function signIn({ email, password }) {
@@ -26,10 +26,7 @@ export async function signIn({ email, password }) {
 
 export async function signInWithGoogle() {
   const client = requireClient();
-  return client.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: window.location.origin },
-  });
+  return client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: appUrl('/') } });
 }
 
 export async function signOut() {
@@ -39,9 +36,7 @@ export async function signOut() {
 
 export async function sendPasswordReset(email) {
   const client = requireClient();
-  return client.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/profile`,
-  });
+  return client.auth.resetPasswordForEmail(email, { redirectTo: appUrl('/profile') });
 }
 
 export async function updateUserMetadata(data) {
