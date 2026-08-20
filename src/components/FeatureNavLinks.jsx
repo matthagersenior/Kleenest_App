@@ -1,5 +1,5 @@
 import {Link} from 'react-router-dom';
-import {Bell,Gift,Medal,Route as RouteIcon,Sparkles,Trophy} from 'lucide-react';
+import {Bell,Gift,Medal,Route as RouteIcon,Sparkles,Trophy,Users} from 'lucide-react';
 import {useAuth} from '../context/AuthContext';
 import {hasCapability} from '../domain/capabilities';
 
@@ -10,6 +10,7 @@ export default function FeatureNavLinks({business=false}){
   const canFleet=hasCapability(capabilities,'fleet');
   return <div className="hero-actions">
     {authenticated&&<Link className="secondary" to="/rewards"><Gift size={16}/>Rewards</Link>}
+    {authenticated&&<Link className="secondary" to="/rewards#social"><Users size={16}/>Community</Link>}
     {authenticated&&<Link className="secondary" to="/notifications"><Bell size={16}/>Notifications</Link>}
     {authenticated&&<Link className="secondary" to="/contests"><Trophy size={16}/>Contests</Link>}
     {authenticated&&<Link className="secondary" to="/leaderboard"><Medal size={16}/>Leaderboard</Link>}
