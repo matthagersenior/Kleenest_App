@@ -164,9 +164,26 @@ export async function deleteReviewPhoto(photoId, storagePath) {
   notifyRuntime('kleenest:review-updated', { photoId, action: 'photo_deleted' });
 }
 
-export async function favoritePlace(locationId) {
-  await user();
-  const { data, error } = await client().rpc('kleenest_toggle_favorite', { p_location_id: locationId });
+export async function favoritePlace(locationId, desiredAction = null) {
+  const currentUser = await user();
+  const c = client();
+  if (desiredAction === 'add' || desiredAction === 'remove') {
+    const { data: existing, error: lookupError } = await c.from('favorites').select('location_id').eq('user_id', currentUser.id).eq('location_id', locationId).maybeSingle();
+    if (lookupError) throw safeError(lookupError, 'Favorite status could not be checked.');
+    const currentlyFavorite = Boolean(existing);
+    const shouldBeFavorite = desiredAction === 'add';
+    if (currentlyFavorite !== shouldBeFavorite) {
+      const { data, error } = await c.rpc('kleenest_toggle_favorite', { p_location_id: locationId });
+      if (error) throw safeError(error, 'Favorite could not be updated.');
+      const favorite = Boolean(data?.favorite);
+      recordFavorite({ locationId, action: favorite ? 'add' : 'remove' }).catch(() => null);
+      notifyRuntime('kleenest:favorite-updated', { locationId, favorited: favorite });
+      return { ...data, favorited: favorite };
+    }
+    notifyRuntime('kleenest:favorite-updated', { locationId, favorited: currentlyFavorite });
+    return { favorite: currentlyFavorite, favorited: currentlyFavorite };
+  }
+  const { data, error } = await c.rpc('kleenest_toggle_favorite', { p_location_id: locationId });
   if (error) throw safeError(error, 'Favorite could not be updated.');
   const favorite = Boolean(data?.favorite);
   recordFavorite({ locationId, action: favorite ? 'add' : 'remove' }).catch(() => null);
