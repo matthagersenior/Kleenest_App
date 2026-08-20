@@ -191,6 +191,26 @@ export async function favoritePlace(locationId, desiredAction = null) {
   return { ...data, favorited: favorite };
 }
 
+export async function getPlaceInteractionState(placeId) {
+  const currentUser = await user();
+  const c = client();
+  const { data: place, error: placeError } = await c.from('places').select('location_id').eq('id', placeId).maybeSingle();
+  if (placeError) throw safeError(placeError, 'Location interaction state could not be loaded.');
+  if (!place?.location_id) throw new Error('This place is not linked to a canonical location.');
+  const locationId = place.location_id;
+  const [favoriteResult, checkInResult] = await Promise.all([
+    c.from('favorites').select('location_id').eq('user_id', currentUser.id).eq('location_id', locationId).maybeSingle(),
+    c.from('check_ins').select('id,checked_in_at,points_awarded').eq('user_id', currentUser.id).eq('location_id', locationId).order('checked_in_at', { ascending: false }).limit(1).maybeSingle()
+  ]);
+  if (favoriteResult.error) throw safeError(favoriteResult.error, 'Favorite status could not be loaded.');
+  if (checkInResult.error) throw safeError(checkInResult.error, 'Check-in status could not be loaded.');
+  return {
+    favorited: Boolean(favoriteResult.data),
+    checkedIn: Boolean(checkInResult.data),
+    latestCheckIn: checkInResult.data || null
+  };
+}
+
 export async function recordPlaceArrival(locationId) {
   await user();
   return recordArrival({ locationId });
