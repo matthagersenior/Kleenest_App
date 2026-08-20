@@ -20,17 +20,15 @@ async function canonicalLocationId(placeId){
 }
 
 export async function submitLocationVerification({ placeId, locationId=null, isOpen, isPublic, notes='' }){
-  await requireUser();
+  const user = await requireUser();
   const canonicalId=locationId||await canonicalLocationId(placeId);
-  const { data, error } = await client().rpc('record_location_verification', {
-    p_location_id: canonicalId,
-    p_has_public_bathroom: Boolean(isPublic),
-    p_latitude: null,
-    p_longitude: null,
-    p_method: 'community',
-  });
+  const { data, error } = await client()
+    .from('location_verification_observations')
+    .upsert({ location_id:canonicalId, user_id:user.id, is_open:Boolean(isOpen), is_public:Boolean(isPublic), notes:String(notes||'').trim()||null, observed_at:new Date().toISOString(), source:'community' }, { onConflict:'location_id,user_id' })
+    .select()
+    .single();
   if(error) throw new Error(error.message||'Verification could not be saved.');
-  return { ...data, location_id: canonicalId, is_open: Boolean(isOpen), is_public: Boolean(isPublic), notes: String(notes||'').trim()||null };
+  return data;
 }
 
 export async function listLocationVerificationSummary(placeIdOrLocationId){
