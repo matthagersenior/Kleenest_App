@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { listLiveEvents, subscribeToLiveEvents } from './liveNetwork';
-import { getBusinessPerformance, createPromotion, createCampaign, createEvent } from './businessPerformance';
+import { getBusinessPerformance } from './businessPerformance';
+import { createPromotion, createCampaign, createEvent } from './business';
 
 async function requireUser(){
   if(!supabase)throw new Error('Supabase is not configured.');
@@ -42,11 +43,6 @@ export async function getBusinessLocationIntelligence(businessId,{start=null,end
   return Array.isArray(data)?data:[];
 }
 
-/**
- * Turn the canonical snapshot + recent live events into stable derived signals.
- * This is deliberately a pure function so consumers, business tools, and fleet
- * tools can share the same interpretation without owning their own scoring rules.
- */
 export function deriveLocationSignals(snapshot, liveEvents=[]){
   const row=snapshot||{};
   const events=Array.isArray(liveEvents)?liveEvents:[];
