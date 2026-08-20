@@ -6,6 +6,7 @@ function scoreReason(signals){
   if(signals.demand_score>=70)reasons.push('high demand');
   if(signals.activity_score>=60)reasons.push('recent activity');
   if(signals.quality_score>=80)reasons.push('strong community confidence');
+  if(signals.quality_score>0&&signals.quality_score<60)reasons.push('quality signal needs attention');
   if(signals.operational_status==='attention')reasons.push('location needs attention');
   if(signals.operational_status==='stale')reasons.push('stale location signal');
   return reasons;
@@ -17,7 +18,9 @@ export function buildLocationRecommendation(snapshot,signals,{surface='consumer'
   if(surface==='business'){
     if(signals.operational_status==='attention'||signals.operational_status==='stale')return{type:'operational_attention',priority:'high',title:'Location needs attention',body:'Recent network signals indicate that this location may need verification or operational follow-up.',reasons};
     if(signals.demand_score>=70)return{type:'demand_opportunity',priority:'high',title:'Demand opportunity',body:'Kleenest is seeing elevated interest around this location.',reasons};
-    return{type:'business_health',priority:'normal',title:'Location health is stable',body:'No immediate operational action is indicated by the current signals.',reasons};
+    if(signals.activity_score>=60)return{type:'activity_opportunity',priority:'normal',title:'Community activity opportunity',body:'Recent check-ins and reviews indicate an opportunity to activate the local community.',reasons};
+    if(signals.quality_score>0&&signals.quality_score<60)return{type:'quality_attention',priority:'high',title:'Quality signal needs attention',body:'Community confidence is below the healthy range and deserves a closer look.',reasons};
+    return null;
   }
   if(surface==='fleet'){
     if(signals.demand_score>=70||signals.activity_score>=70)return{type:'high_activity_zone',priority:'high',title:'High-activity zone',body:'Recent demand and activity make this location a useful operational waypoint.',reasons};
@@ -42,8 +45,9 @@ export function buildBusinessRecommendations(rows=[]){
       quality_score:Number(row.intelligence_score||0),
       operational_status:row.has_recent_conflict?'attention':row.freshness_label?.toLowerCase().includes('stale')?'stale':'normal'
     };
-    return{location_id:row.location_id,name:row.name,recommendation:buildLocationRecommendation(row,signals,{surface:'business'}),signals};
-  });
+    const recommendation=buildLocationRecommendation(row,signals,{surface:'business'});
+    return recommendation?{location_id:row.location_id,name:row.name,recommendation,signals}:null;
+  }).filter(Boolean);
 }
 
 export function buildFleetRecommendations(rows=[]){
