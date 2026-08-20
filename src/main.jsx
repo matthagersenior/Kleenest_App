@@ -22,10 +22,12 @@ function Startup(){
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter basename={githubPagesBasename}>
-      <AuthProvider>
-        <ErrorBoundary><Startup/></ErrorBoundary>
-      </AuthProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter basename={githubPagesBasename}>
+        <AuthProvider>
+          <Startup/>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   </React.StrictMode>
 );
