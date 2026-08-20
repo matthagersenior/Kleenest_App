@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { getCurrentUser } from '../services/auth';
 import { getProfile } from '../services/profile';
+import { normalizeCapabilities } from '../domain/capabilities';
 
 const AuthContext = createContext(null);
 
@@ -26,7 +27,9 @@ export function AuthProvider({ children }) {
     return () => { mounted = false; subscription.subscription.unsubscribe(); };
   }, []);
 
-  return <AuthContext.Provider value={{ user, profile, loading, authenticated: Boolean(user), setProfile }}>{children}</AuthContext.Provider>;
+  const capabilities = useMemo(() => normalizeCapabilities(profile), [profile]);
+
+  return <AuthContext.Provider value={{ user, profile, capabilities, loading, authenticated: Boolean(user), setProfile }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() { return useContext(AuthContext); }
