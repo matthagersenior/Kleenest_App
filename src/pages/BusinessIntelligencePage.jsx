@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { RefreshCw, Sparkles } from 'lucide-react';
 import { listBusinesses, listLocations, getLocationIntelligence } from '../services/business';
@@ -12,10 +12,40 @@ export default function BusinessIntelligencePage() {
   const [state, setState] = useState({ business: null, locations: [], intelligence: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  async function load() { setLoading(true); setError(null); try { const businesses = await listBusinesses(); const business = businesses?.[0]; if (!business) { setState({ business: null, locations: [], intelligence: [] }); return; } const [locations, intelligence] = await Promise.all([listLocations(business.id), getLocationIntelligence(business.id)]); setState({ business, locations: locations || [], intelligence: intelligence || [] }); } catch (e) { setError(e.message || 'Unable to load intelligence.'); } finally { setLoading(false); } }
+  const reloadTimer = useRef(null);
+  const load = async () => {
+    setLoading(true); setError(null);
+    try {
+      const businesses = await listBusinesses(); const business = businesses?.[0];
+      if (!business) { setState({ business: null, locations: [], intelligence: [] }); return; }
+      const [locations, intelligence] = await Promise.all([listLocations(business.id), getLocationIntelligence(business.id)]);
+      setState({ business, locations: locations || [], intelligence: intelligence || [] });
+    } catch (e) { setError(e.message || 'Unable to load intelligence.'); }
+    finally { setLoading(false); }
+  };
+  const scheduleReload = () => {
+    clearTimeout(reloadTimer.current);
+    reloadTimer.current = setTimeout(load, 350);
+  };
   useEffect(() => { if (authenticated) load(); else if (!authLoading) setLoading(false); }, [authenticated, authLoading]);
-  useEffect(() => { if (!authenticated) return undefined; let timer; try { return subscribeToLiveEvents({ onEvent: event => { const type = String(event?.event_type || ''); if (!type.startsWith('location.') && !type.startsWith('user.') && !type.startsWith('business.') && !type.startsWith('fleet.')) return; clearTimeout(timer); timer = setTimeout(load, 350); } }); } catch { return undefined; } }, [authenticated]);
-  useEffect(() => { if (!authenticated) return undefined; const refresh = () => load(); window.addEventListener('kleenest:location-activity', refresh); window.addEventListener('kleenest:intelligence-updated', refresh); return () => { window.removeEventListener('kleenest:location-activity', refresh); window.removeEventListener('kleenest:intelligence-updated', refresh); }; }, [authenticated]);
+  useEffect(() => {
+    if (!authenticated) return undefined;
+    let unsubscribe;
+    try {
+      unsubscribe = subscribeToLiveEvents({ onEvent: event => {
+        const type = String(event?.event_type || '');
+        if (type.startsWith('location.') || type.startsWith('user.') || type.startsWith('business.') || type.startsWith('fleet.')) scheduleReload();
+      } });
+    } catch { unsubscribe = undefined; }
+    return () => { clearTimeout(reloadTimer.current); if (typeof unsubscribe === 'function') unsubscribe(); };
+  }, [authenticated]);
+  useEffect(() => {
+    if (!authenticated) return undefined;
+    const refresh = () => scheduleReload();
+    window.addEventListener('kleenest:location-activity', refresh);
+    window.addEventListener('kleenest:intelligence-updated', refresh);
+    return () => { window.removeEventListener('kleenest:location-activity', refresh); window.removeEventListener('kleenest:intelligence-updated', refresh); };
+  }, [authenticated]);
   if (authLoading || loading) return <section className="page"><div className="empty-state"><p>Loading intelligence…</p></div></section>;
   if (!authenticated) return <section className="page"><div className="empty-state"><h2>Sign in to access business intelligence</h2><Link className="primary" to="/profile">Sign in</Link></div></section>;
   if (error) return <section className="page"><div className="empty-state"><h2>Intelligence unavailable</h2><p>{error}</p><button className="secondary" onClick={load}><RefreshCw size={16}/>Retry</button></div></section>;
