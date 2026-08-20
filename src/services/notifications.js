@@ -9,29 +9,19 @@ async function requireUser() {
 }
 
 export async function listMyNotifications({ limit = 50 } = {}) {
-  const user = await requireUser();
-  const { data, error } = await supabase
-    .from('notifications')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(limit);
+  await requireUser();
+  const { data, error } = await supabase.rpc('user_notifications', { p_limit: limit });
   if (error) throw error;
   return data ?? [];
 }
 
 export async function markNotificationRead(notificationId) {
-  const user = await requireUser();
+  await requireUser();
   if (!notificationId) throw new Error('A notification is required.');
-  const { data, error } = await supabase
-    .from('notifications')
-    .update({ read_at: new Date().toISOString() })
-    .eq('id', notificationId)
-    .eq('user_id', user.id)
-    .select()
-    .single();
+  const { data, error } = await supabase.rpc('mark_notification_read', { p_notification_id: notificationId });
   if (error) throw error;
-  return data;
+  if (!data) throw new Error('Notification could not be marked read.');
+  return { id: notificationId, read_at: new Date().toISOString() };
 }
 
 export async function markAllNotificationsRead() {
@@ -42,4 +32,13 @@ export async function markAllNotificationsRead() {
     .eq('user_id', user.id)
     .is('read_at', null);
   if (error) throw error;
+}
+
+export function subscribeToMyNotifications(userId, onChange) {
+  if (!supabase || !userId || typeof onChange !== 'function') return () => {};
+  const channel = supabase
+    .channel(`notifications:${userId}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, (payload) => onChange(payload.new))
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
 }
