@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { MapPinned, RefreshCw, Route as RouteIcon } from 'lucide-react';
+import { Activity, MapPinned, RefreshCw, Route as RouteIcon, Navigation, Radio } from 'lucide-react';
 import { listBusinesses, listLocations, getLocationIntelligence } from '../services/business';
 import { buildFleetRecommendations } from '../services/intelligenceRecommendations';
+import { subscribeToLiveEvents } from '../services/liveNetwork';
 import { useAuth } from '../context/AuthContext';
 
 export default function FleetReviewPage() {
@@ -11,27 +12,83 @@ export default function FleetReviewPage() {
   const [state, setState] = useState({ business: null, locations: [], intelligence: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [livePulse, setLivePulse] = useState(null);
+
   async function load() {
     setLoading(true); setError(null);
     try {
       const business = (await listBusinesses())?.[0];
       if (!business) { setState({ business: null, locations: [], intelligence: [] }); return; }
-      const [locations, intelligence] = await Promise.all([listLocations(business.id), getLocationIntelligence(business.id)]);
+      const [locations, intelligence] = await Promise.all([
+        listLocations(business.id),
+        getLocationIntelligence(business.id)
+      ]);
       setState({ business, locations: locations || [], intelligence: intelligence || [] });
-    } catch (e) { setError(e.message || 'Unable to load fleet intelligence.'); }
-    finally { setLoading(false); }
+    } catch (e) {
+      setError(e.message || 'Unable to load fleet intelligence.');
+    } finally {
+      setLoading(false);
+    }
   }
-  useEffect(() => { if (authenticated) load(); else if (!authLoading) setLoading(false); }, [authenticated, authLoading]);
+
+  useEffect(() => {
+    if (authenticated) load();
+    else if (!authLoading) setLoading(false);
+  }, [authenticated, authLoading]);
+
+  useEffect(() => {
+    if (!authenticated) return undefined;
+    let refreshTimer;
+    try {
+      return subscribeToLiveEvents({
+        onEvent: (event) => {
+          if (!String(event?.event_type || '').startsWith('fleet.')) return;
+          setLivePulse(event);
+          clearTimeout(refreshTimer);
+          refreshTimer = setTimeout(load, 350);
+        }
+      });
+    } catch {
+      return undefined;
+    }
+    return () => clearTimeout(refreshTimer);
+  }, [authenticated]);
+
+  const recommendations = useMemo(() => buildFleetRecommendations(state.intelligence), [state.intelligence]);
+  const requested = params.get('location');
+  const selected = recommendations.find((item) => String(item.location_id) === String(requested));
+
+  function openRoute(item) {
+    const location = state.locations.find((row) => String(row.id) === String(item.location_id));
+    if (!location) return;
+    const destination = location.latitude != null && location.longitude != null
+      ? `${location.latitude},${location.longitude}`
+      : [location.address, location.city, location.state].filter(Boolean).join(', ');
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`, '_blank', 'noopener,noreferrer');
+  }
+
   if (authLoading || loading) return <section className="page"><div className="empty-state"><p>Loading route intelligence…</p></div></section>;
   if (!authenticated) return <section className="page"><div className="empty-state"><h2>Sign in to review fleet activity</h2><Link className="primary" to="/profile">Sign in</Link></div></section>;
   if (error) return <section className="page"><div className="empty-state"><h2>Fleet intelligence unavailable</h2><p>{error}</p><button className="secondary" onClick={load}><RefreshCw size={16}/>Retry</button></div></section>;
   if (!state.business) return <section className="page"><div className="empty-state"><h2>No business connected</h2><Link className="primary" to="/business/dashboard">Business dashboard</Link></div></section>;
-  const recommendations = buildFleetRecommendations(state.intelligence);
-  const requested = params.get('location');
+
   return <section className="page business-page">
-    <div className="page-header"><div><span className="eyebrow">FLEET INTELLIGENCE</span><h1>Review route activity</h1><p>High-activity locations are surfaced as operational waypoints for fleet planning.</p></div><div className="hero-actions"><Link className="secondary" to="/business/intelligence">Business intelligence</Link><button className="secondary" onClick={load}><RefreshCw size={16}/>Refresh</button></div></div>
-    <section className="detail-panel business-card"><div className="panel-heading"><div><span className="eyebrow">ROUTE REVIEW</span><h2>{requested ? 'Selected location' : 'Recommended waypoints'}</h2></div><RouteIcon size={22}/></div>
-      <div className="business-intelligence-list">{recommendations.length ? recommendations.map((item) => <div className={`business-row ${requested === String(item.location_id) ? 'selected' : ''}`} key={item.location_id}><div><strong>{item.name}</strong><span>{item.recommendation.body}</span><span>Demand {item.signals.demand_score} · Activity {item.signals.activity_score}</span></div><div className="business-intelligence-score"><MapPinned size={18}/><span>Operational waypoint</span></div></div>) : <p className="observation-copy">No elevated activity zones are currently detected.</p>}</div>
+    <div className="page-header">
+      <div><span className="eyebrow">FLEET INTELLIGENCE</span><h1>Review route activity</h1><p>High-activity locations become operational waypoints. Live fleet events refresh the recommendations automatically.</p></div>
+      <div className="hero-actions"><Link className="secondary" to="/business/intelligence">Business intelligence</Link><button className="secondary" onClick={load}><RefreshCw size={16}/>Refresh</button></div>
+    </div>
+
+    {livePulse && <div className="success-banner"><Radio size={16}/><span>Live fleet signal received: <strong>{livePulse.event_type}</strong></span></div>}
+
+    <section className="detail-panel business-card">
+      <div className="panel-heading"><div><span className="eyebrow">ROUTE REVIEW</span><h2>{selected ? selected.name : 'Recommended waypoints'}</h2></div><RouteIcon size={22}/></div>
+      {selected && <div className="business-action-row"><div><strong>Selected operational waypoint</strong><span>{selected.recommendation.body}</span></div><button className="primary" onClick={() => openRoute(selected)}><Navigation size={16}/>Open route</button></div>}
+      <div className="business-intelligence-list">
+        {recommendations.length ? recommendations.map((item) => <div className={`business-row ${requested === String(item.location_id) ? 'selected' : ''}`} key={item.location_id}>
+          <div><strong>{item.name}</strong><span>{item.recommendation.body}</span><span>Demand {item.signals.demand_score} · Activity {item.signals.activity_score} · Quality {item.signals.quality_score}</span></div>
+          <div className="business-intelligence-score"><MapPinned size={18}/><span><Activity size={14}/> Operational waypoint</span><Link className="secondary" to={`/fleet?location=${encodeURIComponent(item.location_id)}`}>Review</Link><button className="secondary" onClick={() => openRoute(item)}><Navigation size={14}/>Route</button></div>
+        </div>) : <p className="observation-copy">No elevated activity zones are currently detected.</p>}
+      </div>
     </section>
   </section>;
 }
