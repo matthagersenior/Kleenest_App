@@ -14,10 +14,10 @@ export default function BusinessIntelligenceActions({ businessId, items = [], lo
     try {
       if (type === 'demand_opportunity') {
         await createPromotion(businessId, { locationId: location.id, title: `Local demand offer — ${location.name || 'your location'}`, description: 'Created from a Kleenest demand opportunity. Customize the offer before publishing.', discount: null, startsAt: new Date().toISOString(), endsAt: null });
-        await publishLiveEvent({ type: LIVE_EVENT_TYPES.BUSINESS_PROMOTION_CREATED, businessId, locationId: location.id, payload: { source: 'business_intelligence_action', recommendation: type } });
+        await publishLiveEvent({ type: LIVE_EVENT_TYPES.BUSINESS_OFFER_STARTED, locationId: location.id, actorType: 'business', payload: { source: 'business_intelligence_action', recommendation: type } });
         setMessage('Promotion draft created and broadcast to the Live Network.');
       } else if (type === 'operational_attention') {
-        await publishLiveEvent({ type: LIVE_EVENT_TYPES.LOCATION_VERIFIED, locationId: location.id, payload: { source: 'business_intelligence_action', recommendation: type } });
+        await publishLiveEvent({ type: LIVE_EVENT_TYPES.LOCATION_VERIFIED, locationId: location.id, actorType: 'business', payload: { source: 'business_intelligence_action', recommendation: type } });
         setMessage('Location verification recorded in the Live Network.');
       } else if (type === 'high_activity_zone') {
         window.location.assign(`/fleet?location=${encodeURIComponent(location.id)}`); return;
