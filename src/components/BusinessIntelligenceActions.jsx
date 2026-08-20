@@ -1,8 +1,17 @@
 import { useState } from 'react';
-import { CheckCircle2, Megaphone, Route as RouteIcon, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Megaphone, Route as RouteIcon, ShieldCheck, Sparkles } from 'lucide-react';
 import { executeIntelligenceAction } from '../services/intelligence';
 
 const ACTION_TYPES = Object.freeze(['demand_opportunity','quality_attention','activity_opportunity','operational_attention','high_activity_zone']);
+
+function actionFor(type) {
+  if (type === 'demand_opportunity') return { label: 'Create promotion', icon: Megaphone, action: 'create-promotion' };
+  if (type === 'quality_attention') return { label: 'Create campaign', icon: Sparkles, action: 'create-campaign' };
+  if (type === 'activity_opportunity') return { label: 'Create event', icon: RouteIcon, action: 'create-event' };
+  if (type === 'operational_attention') return { label: 'Review location', icon: CheckCircle2, action: null };
+  if (type === 'high_activity_zone') return { label: 'Review route', icon: RouteIcon, action: null };
+  return null;
+}
 
 export default function BusinessIntelligenceActions({ businessId, items = [], locations = [], onComplete }) {
   const [busy, setBusy] = useState(null);
@@ -11,40 +20,36 @@ export default function BusinessIntelligenceActions({ businessId, items = [], lo
 
   async function runAction(item) {
     const type = item?.recommendation?.type;
-    const location = locations.find(x => String(x.id) === String(item?.location_id));
-    if (!businessId || !location || !ACTION_TYPES.includes(type)) return;
+    const locationId = item?.location_id;
+    const location = locations.find(x => String(x.id) === String(locationId));
+    const config = actionFor(type);
+    if (!businessId || !location || !config) return;
+
     const actionKey = `${location.id}:${type}`;
     setBusy(actionKey);
     setMessage(null);
     setError(null);
     try {
-      if (type === 'demand_opportunity') {
-        await executeIntelligenceAction(businessId, { action: 'create-promotion' }, {
-          locationId: location.id,
-          title: `Local demand offer — ${location.name || 'your location'}`,
-          description: 'Created from a Kleenest demand opportunity.'
-        });
-      } else if (type === 'quality_attention') {
-        await executeIntelligenceAction(businessId, { action: 'create-campaign' }, {
+      if (config.action) {
+        await executeIntelligenceAction(businessId, { action: config.action, locationId }, {
+          locationId,
+          title: type === 'demand_opportunity'
+            ? `Local demand offer — ${location.name || 'your location'}`
+            : type === 'activity_opportunity'
+              ? `Community activity — ${location.name || 'location'}`
+              : undefined,
+          description: `Created from a Kleenest ${type.replaceAll('_', ' ')} signal.`,
           name: `Quality improvement — ${location.name || 'location'}`,
           goal: 'Improve community experience and review sentiment.'
         });
-      } else if (type === 'activity_opportunity') {
-        await executeIntelligenceAction(businessId, { action: 'create-event' }, {
-          locationId: location.id,
-          title: `Community activity — ${location.name || 'location'}`,
-          description: 'Created from a Kleenest activity signal.'
-        });
-      } else if (type === 'operational_attention') {
-        setMessage('Operational attention requires verification; no verification is asserted automatically.');
-        return;
+        window.dispatchEvent(new CustomEvent('kleenest:intelligence-updated', { detail: { locationId, action: config.action } }));
+        await onComplete?.();
+        setMessage('Intelligence action completed.');
       } else if (type === 'high_activity_zone') {
-        window.location.assign(`/fleet?location=${encodeURIComponent(location.id)}`);
-        return;
+        window.location.assign(`/fleet?location=${encodeURIComponent(locationId)}`);
+      } else {
+        window.location.assign(`/place/${encodeURIComponent(locationId)}`);
       }
-      window.dispatchEvent(new CustomEvent('kleenest:intelligence-updated', { detail: { locationId: location.id, action: type } }));
-      await onComplete?.();
-      setMessage('Intelligence action completed.');
     } catch (e) {
       setError(e.message || 'Unable to complete the intelligence action.');
     } finally {
@@ -64,12 +69,16 @@ export default function BusinessIntelligenceActions({ businessId, items = [], lo
       {actionable.slice(0, 8).map(item => {
         const type = item.recommendation.type;
         const actionKey = `${item.location_id}:${type}`;
-        const label = type === 'demand_opportunity' ? 'Create promotion' : type === 'quality_attention' ? 'Create campaign' : type === 'activity_opportunity' ? 'Create event' : type === 'operational_attention' ? 'Review verification' : 'Review route';
-        const Icon = type === 'demand_opportunity' ? Megaphone : type === 'operational_attention' ? CheckCircle2 : RouteIcon;
+        const config = actionFor(type);
+        const Icon = config.icon;
         return <div className="business-row" key={actionKey}>
-          <div><strong>{item.recommendation.title} · {item.name}</strong><span>{item.recommendation.body}</span><span>{item.recommendation.reasons?.join(' · ') || 'Derived from current intelligence'}</span></div>
-          <button className="secondary" disabled={busy !== null} onClick={() => runAction(item)} aria-label={`${label} for ${item.name}`}>
-            <Icon size={16}/>{busy === actionKey ? 'Working…' : label}
+          <div>
+            <strong>{item.recommendation.title} · {item.name}</strong>
+            <span>{item.recommendation.body}</span>
+            <span>{item.recommendation.reasons?.join(' · ') || 'Derived from current intelligence'}</span>
+          </div>
+          <button className="secondary" disabled={busy !== null} onClick={() => runAction(item)} aria-label={`${config.label} for ${item.name}`}>
+            <Icon size={16}/>{busy === actionKey ? 'Working…' : config.label}
           </button>
         </div>;
       })}
