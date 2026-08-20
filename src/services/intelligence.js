@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { listLiveEvents, subscribeToLiveEvents } from './liveNetwork';
+import { getBusinessPerformance, createPromotion, createCampaign, createEvent } from './businessPerformance';
 
 async function requireUser(){
   if(!supabase)throw new Error('Supabase is not configured.');
@@ -55,41 +56,13 @@ export function deriveLocationSignals(snapshot, liveEvents=[]){
     return Number.isFinite(time)&&now-time<=2*60*60*1000;
   });
   const count=(types)=>recent.filter((event)=>types.includes(event.event_type)).length;
-  const demand=Math.min(100,Math.round(
-    Number(row.searches_7d||0)*2+
-    Number(row.views_30d||0)*0.5+
-    Number(row.directions_30d||0)*2+
-    Number(row.arrivals_30d||0)*3+
-    recent.length*4
-  ));
-  const activity=Math.min(100,Math.round(
-    Number(row.arrivals_30d||0)*2+
-    Number(row.checkins_30d||0)*3+
-    Number(row.reviews_30d||0)*2+
-    recent.length*5
-  ));
+  const demand=Math.min(100,Math.round(Number(row.searches_7d||0)*2+Number(row.views_30d||0)*0.5+Number(row.directions_30d||0)*2+Number(row.arrivals_30d||0)*3+recent.length*4));
+  const activity=Math.min(100,Math.round(Number(row.arrivals_30d||0)*2+Number(row.checkins_30d||0)*3+Number(row.reviews_30d||0)*2+recent.length*5));
   const quality=Math.max(0,Math.min(100,Math.round(Number(row.intelligence_score||0))));
-  const operationalStatus=
-    count(['location.stale'])>0?'stale':
-    count(['location.conflict'])>0?'attention':
-    count(['location.verified'])>0?'verified':
-    recent.some((event)=>['user.arrived','user.qr_check_in'].includes(event.event_type))?'active':'normal';
-  return {
-    demand_score:demand,
-    quality_score:quality,
-    activity_score:activity,
-    operational_status:operationalStatus,
-    recent_event_count:recent.length,
-    recent_arrivals:count(['user.arrived']),
-    recent_checkins:count(['user.qr_check_in']),
-    recent_verifications:count(['location.verified']),
-    recent_conflicts:count(['location.conflict']),
-    recent_stale_events:count(['location.stale']),
-    calculated_at:new Date().toISOString()
-  };
+  const operationalStatus=count(['location.stale'])>0?'stale':count(['location.conflict'])>0?'attention':count(['location.verified'])>0?'verified':recent.some((event)=>['user.arrived','user.qr_check_in'].includes(event.event_type))?'active':'normal';
+  return {demand_score:demand,quality_score:quality,activity_score:activity,operational_status:operationalStatus,recent_event_count:recent.length,recent_arrivals:count(['user.arrived']),recent_checkins:count(['user.qr_check_in']),recent_verifications:count(['location.verified']),recent_conflicts:count(['location.conflict']),recent_stale_events:count(['location.stale']),calculated_at:new Date().toISOString()};
 }
 
-/** Fetch the snapshot and the canonical live events used to derive its current signals. */
 export async function getLocationSignals(placeId,{liveEventLimit=100}={}){
   const snapshot=await getLocationIntelligence(placeId);
   if(!snapshot?.location_id)return{snapshot,signals:deriveLocationSignals(snapshot,[])};
@@ -97,7 +70,6 @@ export async function getLocationSignals(placeId,{liveEventLimit=100}={}){
   return{snapshot,signals:deriveLocationSignals(snapshot,liveEvents),liveEvents};
 }
 
-/** Keep a consumer-facing signal view fresh without duplicating the event pipeline. */
 export function subscribeToLocationSignals({locationId,onSignals,onEvent}={}){
   if(!locationId)return()=>{};
   let recentEvents=[];
@@ -131,4 +103,49 @@ export function trustSummary(trust){
   const score=trust.confidence_score==null?trust.confidence:trust.confidence_score;
   const conflict=Boolean(trust.has_recent_conflict||trust.conflict_count>0);
   return{label:conflict?'Conflicting community reports':Number(score||0)>=80?'Highly trusted':Number(score||0)>=60?'Community verified':Number(score||0)>=40?'Some evidence':'Limited evidence',score:score==null?null:Number(score),conflict};
+}
+
+export const INTELLIGENCE_SIGNAL_TYPES=Object.freeze({DEMAND:'demand',QUALITY:'quality',ACTIVITY:'activity',OPERATIONS:'operations'});
+const num=value=>Number(value||0);
+
+export function deriveBusinessSignals(performance){
+  const totals=performance?.totals||{};
+  const reviews=performance?.reviews||{};
+  const analytics=performance?.analytics||{};
+  const rows=Array.isArray(performance?.intelligence)?performance.intelligence:[];
+  const searches=num(totals.searches),views=num(totals.views),directions=num(totals.directions),arrivals=num(totals.arrivals),checkIns=num(totals.checkIns),reviewCount=num(totals.reviews);
+  const averageRating=num(reviews.average_rating??reviews.avg_rating??analytics.average_rating);
+  const conflicts=num(performance?.locationsWithConflicts);
+  const stale=Math.max(rows.length-num(performance?.freshLocations),0);
+  const demandScore=searches+views*0.5;
+  const activityScore=checkIns+reviewCount*2;
+  const operationalRisk=conflicts+stale;
+  return [
+    {type:INTELLIGENCE_SIGNAL_TYPES.DEMAND,key:'demand-opportunity',title:demandScore>0?'Demand opportunity detected':'Demand data is still building',score:Math.round(demandScore),evidence:`${searches} searches and ${views} location views`,priority:demandScore>=25?'high':demandScore>0?'medium':'low',action:demandScore>=25?'create-promotion':null},
+    {type:INTELLIGENCE_SIGNAL_TYPES.QUALITY,key:'quality',title:averageRating?`Community rating: ${averageRating.toFixed(1)}`:'Quality signal is still building',score:averageRating?Math.round(averageRating*20):0,evidence:`${reviewCount} reviews`,priority:averageRating>0&&averageRating<3.5?'high':'medium',action:averageRating>0&&averageRating<3.5?'create-campaign':null},
+    {type:INTELLIGENCE_SIGNAL_TYPES.ACTIVITY,key:'activity',title:activityScore>0?'Community activity is moving':'Community activity is quiet',score:Math.round(activityScore),evidence:`${checkIns} check-ins and ${reviewCount} reviews`,priority:activityScore>=10?'high':activityScore>0?'medium':'low',action:activityScore>0&&activityScore<10?'create-event':null},
+    {type:INTELLIGENCE_SIGNAL_TYPES.OPERATIONS,key:'operations',title:operationalRisk?'Operational attention needed':'Operations look healthy',score:operationalRisk,evidence:`${conflicts} conflicting and ${stale} stale location signals`,priority:operationalRisk>=2?'high':operationalRisk?'medium':'low',action:null},
+    {type:INTELLIGENCE_SIGNAL_TYPES.DEMAND,key:'conversion',title:directions>0?'High-intent traffic detected':'Intent data is still building',score:views?Math.round((directions/views)*100):0,evidence:`${directions} direction requests from ${views} views`,priority:views&&directions/views>=0.2?'high':'low',action:null},
+    {type:INTELLIGENCE_SIGNAL_TYPES.DEMAND,key:'arrival-conversion',title:directions>0?'Arrival conversion is measurable':'Arrival data is still building',score:directions?Math.round((arrivals/directions)*100):0,evidence:`${arrivals} arrivals from ${directions} direction requests`,priority:directions&&arrivals/directions>=0.4?'high':'low',action:null},
+  ];
+}
+
+export async function getBusinessIntelligence(businessId){
+  const performance=await getBusinessPerformance(businessId);
+  return{performance,signals:deriveBusinessSignals(performance)};
+}
+
+export async function executeIntelligenceAction(businessId,signal,payload={}){
+  if(!signal?.action)throw new Error('This intelligence signal has no available action.');
+  switch(signal.action){
+    case'create-promotion':return createPromotion(businessId,{locationId:payload.locationId??null,title:payload.title||'Demand opportunity promotion',description:payload.description||'Promotion created from a Kleenest demand signal.',discount:payload.discount||null,startsAt:payload.startsAt||null,endsAt:payload.endsAt||null});
+    case'create-campaign':return createCampaign(businessId,{name:payload.name||'Quality improvement campaign',type:payload.type||'quality',goal:payload.goal||'Improve community experience and review sentiment.',status:payload.status||'draft'});
+    case'create-event':return createEvent(businessId,{locationId:payload.locationId??null,title:payload.title||'Community activity event',description:payload.description||'Event created from a Kleenest activity signal.',eventDate:payload.eventDate,eventTime:payload.eventTime});
+    default:throw new Error(`Unsupported intelligence action: ${signal.action}`);
+  }
+}
+
+export function rankSignals(signals){
+  const weight={high:3,medium:2,low:1};
+  return[...(signals||[])].sort((a,b)=>{const priority=(weight[b.priority]||0)-(weight[a.priority]||0);return priority||num(b.score)-num(a.score);});
 }
