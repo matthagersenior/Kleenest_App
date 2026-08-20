@@ -26,12 +26,14 @@ export async function listAmenities() {
 }
 
 export async function submitBathroomVerification({ locationId, hasPublicBathroom, latitude = null, longitude = null, distanceMeters = null }) {
-  const user = await requireUser();
-  const { data, error } = await supabase
-    .from('location_bathroom_verifications')
-    .insert({ location_id: locationId, user_id: user.id, has_public_bathroom: Boolean(hasPublicBathroom), verification_method: 'user', latitude, longitude, distance_meters: distanceMeters })
-    .select('id,location_id,has_public_bathroom,created_at')
-    .single();
+  await requireUser();
+  const { data, error } = await supabase.rpc('record_bathroom_verification', {
+    p_location_id: locationId,
+    p_has_public_bathroom: Boolean(hasPublicBathroom),
+    p_lat: latitude,
+    p_lng: longitude,
+    p_distance_meters: distanceMeters,
+  });
   if (error) throw error;
   return data;
 }
@@ -40,7 +42,7 @@ export async function listBathroomVerifications(locationId) {
   if (!supabase || !locationId) return [];
   const { data, error } = await supabase
     .from('location_bathroom_verifications')
-    .select('id,user_id,has_public_bathroom,verification_method,created_at')
+    .select('id,user_id,has_public_bathroom,verification_method,latitude,longitude,distance_meters,created_at')
     .eq('location_id', locationId)
     .order('created_at', { ascending: false });
   if (error) throw error;
