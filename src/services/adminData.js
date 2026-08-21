@@ -21,10 +21,7 @@ export async function runDataIngest(action,payload={}){
   return invoke('public-data-ingest-v3',{action,...payload});
 }
 
-// Network ingestion is admin-only and uses the clean v2 gateway. The legacy
-// market-bathroom-ingest function has stale import-map metadata and must not
-// be called by the browser.
-const NETWORK_INGEST_FUNCTION='market-bathroom-ingest-v2';
+const NETWORK_INGEST_FUNCTION='market-bathroom-ingest-v3';
 
 export async function runNetworkIngest(payload={}){
   const source=String(payload.source||'osm').toLowerCase();
