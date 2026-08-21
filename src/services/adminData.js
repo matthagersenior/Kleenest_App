@@ -18,22 +18,20 @@ async function invoke(name,body){
 }
 
 export async function runDataIngest(action,payload={}){
-  return invoke('public-data-ingest-v3',{action,...payload});
+  return invoke('public-data-ingest-v4',{action,...payload});
 }
 
-const NETWORK_INGEST_FUNCTION='market-bathroom-ingest-v3';
+const NETWORK_INGEST_FUNCTION='market-bathroom-ingest-v5';
 
 export async function runNetworkIngest(payload={}){
   const source=String(payload.source||'osm').toLowerCase();
   const markets=Array.isArray(payload.markets)?payload.markets.map(x=>String(x).toUpperCase()):[];
   if(markets.length===1&&markets[0]==='STL'&&source==='all') return invoke(NETWORK_INGEST_FUNCTION,{action:'stl'});
-  if(source==='osm'&&markets.length===10&&!markets.includes('STL')) return invoke(NETWORK_INGEST_FUNCTION,{action:'osm-top-10'});
-  if(source==='datagov'&&markets.length===10&&!markets.includes('STL')) return invoke(NETWORK_INGEST_FUNCTION,{action:'datagov-top-10'});
   if(markets.length===1){
     const city=markets[0];
-    return invoke(NETWORK_INGEST_FUNCTION,{action:source==='datagov'?'datagov-city':'osm-city',city});
+    return invoke(NETWORK_INGEST_FUNCTION,{action:'osm-city',city});
   }
-  return invoke(NETWORK_INGEST_FUNCTION,{action:source==='datagov'?'datagov-top-10':'osm-top-10'});
+  return invoke(NETWORK_INGEST_FUNCTION,{action:'osm-city',city:markets[0]||'STL'});
 }
 
 export async function runAdminTool(action,payload={}){return invoke('admin-tools',{action,...payload});}
