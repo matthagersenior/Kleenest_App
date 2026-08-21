@@ -16,14 +16,8 @@ const NETWORK_INGEST_FUNCTION='market-bathroom-ingest-v5';
 export async function runNetworkIngest(payload={}){
   const source=String(payload.source||'osm').toLowerCase();
   const markets=Array.isArray(payload.markets)?payload.markets.map(x=>String(x).toUpperCase()):[];
-  const city=markets[0]||'STL';
-  if(markets.length===1){
-    if(source==='all')return invoke(NETWORK_INGEST_FUNCTION,{action:'stl'});
-    return invoke(NETWORK_INGEST_FUNCTION,{action:source==='datagov'?'datagov-city':'osm-city',city});
-  }
-  if(source==='datagov')return invoke(NETWORK_INGEST_FUNCTION,{action:'datagov-top-10'});
-  if(source==='all')return invoke(NETWORK_INGEST_FUNCTION,{action:'stl'});
-  return invoke(NETWORK_INGEST_FUNCTION,{action:'osm-top-10'});
+  if(markets.length===1)return invoke(NETWORK_INGEST_FUNCTION,{action:source==='datagov'?'datagov-city':'osm-city',city:markets[0]});
+  return invoke(NETWORK_INGEST_FUNCTION,{action:source==='datagov'?'datagov-top-10':'osm-top-10'});
 }
 export async function runAdminTool(action,payload={}){return invoke('admin-tools',{action,...payload})}
 export async function backfillLocationAddresses(limit=25){return invoke('backfill-location-addresses',{limit})}
