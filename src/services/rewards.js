@@ -86,3 +86,20 @@ export const recordProgressionMetric = async ({ metric, sourceType, sourceId, qu
   if (error) throw error;
   return data;
 };
+
+export const recordGameScore = async ({ gameId, score, rounds = 0 }) => {
+  const user = await requireUser();
+  const normalizedScore = Math.max(0, Math.floor(Number(score) || 0));
+  const normalizedRounds = Math.max(0, Math.floor(Number(rounds) || 0));
+  if (!gameId) throw new Error('A game ID is required.');
+  const result = await recordProgressionMetric({
+    metric: `game_${String(gameId).replace(/[^a-z0-9_-]/gi, '_')}`,
+    sourceType: 'game',
+    sourceId: `${user.id}:${gameId}`,
+    quantity: Math.max(1, normalizedRounds),
+    pointsAwarded: normalizedScore,
+    metadata: { game_id: gameId, score: normalizedScore, rounds: normalizedRounds },
+  });
+  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('kleenest:rewards-updated', { detail: result }));
+  return result;
+};
