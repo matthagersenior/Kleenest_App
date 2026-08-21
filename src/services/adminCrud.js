@@ -14,15 +14,12 @@ export const ADMIN_RESOURCES = [
   ['fleet_vehicles','Fleet vehicles'],['fleet_drivers','Fleet drivers'],['fleet_routes','Fleet routes'],['fleet_alerts','Fleet alerts'],
   ['fleet_maintenance_records','Fleet maintenance'],['enterprise_partner_networks','Enterprise networks'],['enterprise_partner_campaigns','Enterprise campaigns'],
 ];
-
-const allowed = new Set(ADMIN_RESOURCES.map(([table]) => table));
-export function assertAdminResource(table){ if(!allowed.has(table)) throw new Error('Admin resource is not allowed.'); return table; }
-export async function listAdminRows(table,{limit=50,offset=0,order='created_at',ascending=false}={}){
-  const client=requireSupabase(); assertAdminResource(table);
-  let query=client.from(table).select('*',{count:'exact'}).range(offset,offset+limit-1);
-  const {data,error,count}=await query.order(order,{ascending}).catch(async()=>await client.from(table).select('*',{count:'exact'}).range(offset,offset+limit-1));
-  if(error) throw error; return {data:data||[],count:count||0};
-}
+const ADMIN_KEYS={location_hours:['id'],location_amenities:['location_id','amenity_id'],favorites:['user_id','location_id'],follows:['follower_id','following_id'],user_badges:['user_id','badge_id'],level_definitions:['level'],location_confidence:['location_id'],notification_preferences:['user_id'],location_verification_targets:['campaign_id','location_id']};
+export const adminKeysFor=(table)=>ADMIN_KEYS[table]||['id'];
+const allowed=new Set(ADMIN_RESOURCES.map(([table])=>table));
+export function assertAdminResource(table){if(!allowed.has(table))throw new Error('Admin resource is not allowed.');return table;}
+const applyKeys=(query,table,record)=>adminKeysFor(table).reduce((q,key)=>q.eq(key,record[key]),query);
+export async function listAdminRows(table,{limit=50,offset=0,order='created_at',ascending=false}={}){const client=requireSupabase();assertAdminResource(table);let query=client.from(table).select('*',{count:'exact'}).range(offset,offset+limit-1);try{const ordered=await query.order(order,{ascending});if(!ordered.error)return {data:ordered.data||[],count:ordered.count||0};}catch{}const {data,error,count}=await client.from(table).select('*',{count:'exact'}).range(offset,offset+limit-1);if(error)throw error;return {data:data||[],count:count||0};}
 export async function createAdminRow(table,payload){const client=requireSupabase();assertAdminResource(table);const {data,error}=await client.from(table).insert(payload).select().single();if(error)throw error;return data;}
-export async function updateAdminRow(table,id,payload){const client=requireSupabase();assertAdminResource(table);const {data,error}=await client.from(table).update(payload).eq('id',id).select().single();if(error)throw error;return data;}
-export async function deleteAdminRow(table,id){const client=requireSupabase();assertAdminResource(table);const {error}=await client.from(table).delete().eq('id',id);if(error)throw error;return {ok:true};}
+export async function updateAdminRow(table,record,payload){const client=requireSupabase();assertAdminResource(table);const query=applyKeys(client.from(table).update(payload),table,record);const {data,error}=await query.select().single();if(error)throw error;return data;}
+export async function deleteAdminRow(table,record){const client=requireSupabase();assertAdminResource(table);const {error}=await applyKeys(client.from(table).delete(),table,record);if(error)throw error;return {ok:true};}
