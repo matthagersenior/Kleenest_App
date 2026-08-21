@@ -16,32 +16,30 @@ function MapWorkspace(){
   const [menuOpen,setMenuOpen]=useState(false);
   const { authenticated }=useAuth();
 
+  const loadNetwork=(location)=>{
+    setLoading(true);setError(null);
+    listPlaces({category:'all',limit:500,...(location?{userLocation:location,radiusKm:50}:{sort:'recommended'})})
+      .then(rows=>setPlaces(Array.isArray(rows)?rows:[]))
+      .catch(err=>setError(err?.message||'Unable to load the nearby network.'))
+      .finally(()=>setLoading(false));
+  };
+
   useEffect(()=>{
     let active=true;
     if(!navigator.geolocation){setLoading(false);setError('Location is not supported by this browser.');return undefined;}
     navigator.geolocation.getCurrentPosition(
-      position=>active&&setUserLocation({latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy||0}),
-      ()=>active&&setError('Location permission was unavailable. Showing the network without proximity filtering.'),
+      position=>{if(!active)return;const location={latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy||0};setUserLocation(location);loadNetwork(location)},
+      ()=>{if(!active)return;setError('Location permission was unavailable. Showing the network without proximity filtering.');loadNetwork(null)},
       {enableHighAccuracy:true,maximumAge:30000,timeout:10000}
     );
     return()=>{active=false};
   },[]);
 
-  useEffect(()=>{
-    let active=true;
-    setLoading(true);setError(null);
-    listPlaces({category:'all',limit:500,...(userLocation?{userLocation,radiusKm:30}:{sort:'recommended'})})
-      .then(rows=>active&&setPlaces(Array.isArray(rows)?rows:[]))
-      .catch(err=>active&&setError(err?.message||'Unable to load the nearby network.'))
-      .finally(()=>active&&setLoading(false));
-    return()=>{active=false};
-  },[userLocation]);
-
   const refreshLocation=()=>{
     if(!navigator.geolocation){setError('Location is not supported by this browser.');return;}
     setError(null);
     navigator.geolocation.getCurrentPosition(
-      position=>setUserLocation({latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy||0}),
+      position=>{const location={latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy||0};setUserLocation(location);loadNetwork(location)},
       ()=>setError('We could not access your location. Check browser location permission.'),
       {enableHighAccuracy:true,maximumAge:0,timeout:10000}
     );
