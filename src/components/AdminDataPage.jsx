@@ -16,7 +16,7 @@ export default function AdminDataPage(){
  <div className="admin-tool-grid">
    <Link className="detail-panel admin-tool-card" to="/fleet"><Radio size={22}/><div><strong>Fleet operations</strong><span>Operational signals, route activity, and fleet intelligence.</span></div></Link>
    <Link className="detail-panel admin-tool-card" to="/business/dashboard"><Building2 size={22}/><div><strong>Business operations</strong><span>Businesses, locations, QR activity, intelligence, and performance.</span></div></Link>
-   <Link className="detail-panel admin-tool-card" to="/maps"><MapPinned size={22}/><div><strong>Network map</strong><span>Canonical locations and GPS discovery.</span></div></Link>
+   <Link className="detail-panel admin-tool-card" to="/map"><MapPinned size={22}/><div><strong>Network map</strong><span>Canonical locations and GPS discovery.</span></div></Link>
    <Link className="detail-panel admin-tool-card" to="/notifications"><Users size={22}/><div><strong>Community activity</strong><span>User activity and notification surfaces.</span></div></Link>
  </div>
  <section className="admin-tools-panel admin-secondary-tools"><div className="panel-heading"><div><span className="eyebrow">MAINTENANCE</span><h2>Network maintenance</h2><p>Address coverage, backend health, and derived network data.</p></div></div><div className="admin-actions">
