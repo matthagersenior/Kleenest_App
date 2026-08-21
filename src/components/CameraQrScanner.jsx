@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Camera, X } from 'lucide-react';
+import { Camera, Check, X } from 'lucide-react';
 
 export default function CameraQrScanner({ onDetected, onClose }) {
   const videoRef = useRef(null);
@@ -7,6 +7,7 @@ export default function CameraQrScanner({ onDetected, onClose }) {
   const frameRef = useRef(null);
   const [error, setError] = useState(null);
   const [supported, setSupported] = useState(true);
+  const [manualCode, setManualCode] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -45,8 +46,23 @@ export default function CameraQrScanner({ onDetected, onClose }) {
     };
   }, [onDetected]);
 
+  function submitManual(e) {
+    e.preventDefault();
+    const value = manualCode.trim();
+    if (!value) return;
+    onDetected(value);
+  }
+
+  const manualFallback = <form className="qr-manual-fallback" onSubmit={submitManual}>
+    <label htmlFor="kleenest-qr-code">Enter QR code</label>
+    <div className="hero-actions">
+      <input id="kleenest-qr-code" value={manualCode} onChange={e => setManualCode(e.target.value)} placeholder="Paste or type the code" autoComplete="off" />
+      <button className="primary" type="submit" disabled={!manualCode.trim()}><Check size={16}/>Continue</button>
+    </div>
+  </form>;
+
   return <div className="qr-scanner" role="dialog" aria-label="Scan Kleenest QR code">
     <div className="qr-scanner-header"><div><span className="eyebrow">CAMERA CHECK-IN</span><h3><Camera size={18}/> Scan QR code</h3></div><button className="icon-button" onClick={onClose} aria-label="Close scanner"><X/></button></div>
-    {!supported ? <div className="empty-state"><p>Your browser does not support native QR scanning. Use the code entry field instead.</p></div> : error ? <div className="form-error">{error}</div> : <div className="qr-camera-frame"><video ref={videoRef} playsInline muted aria-label="QR camera preview"/><div className="qr-target"/></div>}
+    {!supported ? <div className="empty-state"><p>Your browser does not support native QR scanning.</p>{manualFallback}</div> : error ? <><div className="form-error" role="alert">{error}</div>{manualFallback}</> : <><div className="qr-camera-frame"><video ref={videoRef} playsInline muted aria-label="QR camera preview"/><div className="qr-target"/></div>{manualFallback}</>}
   </div>;
 }
