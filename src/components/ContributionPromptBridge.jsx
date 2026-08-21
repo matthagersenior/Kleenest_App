@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { MapPin, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import RestroomObservationPanel from './RestroomObservationPanel';
+import './ContributionPromptBridge.css';
 
 export default function ContributionPromptBridge(){
   const [prompt,setPrompt]=useState(null);
