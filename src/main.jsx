@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import App from './AppRuntime.jsx';
+import App from './CanonicalAppRuntime.jsx';
 import FeatureIntegration from './components/FeatureIntegration';
 import { AuthProvider } from './context/AuthContext';
 import { assertRuntimeConfig } from './lib/runtime';
