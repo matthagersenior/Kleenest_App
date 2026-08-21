@@ -24,13 +24,13 @@ export async function runDataIngest(action,payload={}){
 export async function runNetworkIngest(payload={}){
   const source=String(payload.source||'osm').toLowerCase();
   const markets=Array.isArray(payload.markets)?payload.markets.map(x=>String(x).toUpperCase()):[];
+  if(markets.length===1&&markets[0]==='STL'&&source==='all') return invoke('market-bathroom-ingest',{action:'stl'});
   if(source==='osm'&&markets.length===10&&!markets.includes('STL')) return invoke('market-bathroom-ingest',{action:'osm-top-10'});
   if(source==='datagov'&&markets.length===10&&!markets.includes('STL')) return invoke('market-bathroom-ingest',{action:'datagov-top-10'});
   if(markets.length===1){
     const city=markets[0];
     return invoke('market-bathroom-ingest',{action:source==='datagov'?'datagov-city':'osm-city',city});
   }
-  if(markets.length===1&&markets[0]==='STL'&&source==='all') return invoke('market-bathroom-ingest',{action:'stl'});
   return invoke('market-bathroom-ingest',{action:source==='datagov'?'datagov-top-10':'osm-top-10'});
 }
 
