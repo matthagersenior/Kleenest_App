@@ -10,12 +10,14 @@ import BusinessIntelligencePage from '../pages/BusinessIntelligencePage';
 import BusinessManagePage from '../pages/BusinessManagePage';
 import BusinessReviewsPage from '../pages/BusinessReviewsPage';
 import FleetReviewPage from '../pages/FleetReviewPage';
+import EnterpriseCommandCenterPage from '../pages/EnterpriseCommandCenterPage';
 import AdminDataPage from './AdminDataPage';
 import AdminCrudPage from './AdminCrudPage';
 
 const businessRoles=['business','owner','admin'];
 const fleetRoles=['fleet','admin'];
 const adminRoles=['admin'];
+const enterpriseRoles=['business','owner','admin'];
 
 export default function KleenestFeatureRoutes(){return <>
   <Route path="/rewards" element={<RouteGuard requireAuth><RewardsPage/></RouteGuard>}/>
@@ -26,6 +28,7 @@ export default function KleenestFeatureRoutes(){return <>
   <Route path="/business/manage" element={<RouteGuard requireAuth roles={businessRoles}><BusinessManagePage/></RouteGuard>}/>
   <Route path="/business/reviews" element={<RouteGuard requireAuth roles={businessRoles}><BusinessReviewsPage/></RouteGuard>}/>
   <Route path="/fleet" element={<RouteGuard requireAuth roles={fleetRoles}><FleetReviewPage/></RouteGuard>}/>
+  <Route path="/enterprise" element={<RouteGuard requireAuth roles={enterpriseRoles}><EnterpriseCommandCenterPage/></RouteGuard>}/>
   <Route path="/business/entitlements" element={<RouteGuard requireAuth roles={businessRoles}><BusinessEntitlementsPage/></RouteGuard>}/>
   <Route path="/business/performance" element={<RouteGuard requireAuth roles={businessRoles}><BusinessPerformancePage/></RouteGuard>}/>
   <Route path="/admin/data" element={<RouteGuard requireAuth roles={adminRoles}><AdminDataPage/></RouteGuard>}/>
