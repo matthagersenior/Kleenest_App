@@ -1,72 +1,14 @@
 import { supabase } from '../lib/supabase';
+import { createOfflinePack } from './offlinePacks';
 
-async function requireUser() {
-  if (!supabase) throw new Error('Supabase is not configured.');
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error) throw error;
-  if (!user) throw new Error('Sign in to use routes.');
-  return user;
-}
-
-export async function listMyRoutes({ status = null, limit = 25 } = {}) {
-  const user = await requireUser();
-  let query = supabase.from('route_plans').select('id,name,status,start_lat,start_lng,end_lat,end_lng,distance_miles,estimated_minutes,stops_count,points_earned,completed_at,created_at,updated_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(limit);
-  if (status) query = query.eq('status', status);
-  const { data, error } = await query;
-  if (error) throw error;
-  return data ?? [];
-}
-
-export async function getRoute(routeId) {
-  const user = await requireUser();
-  const { data, error } = await supabase.from('route_plans').select('id,name,status,start_lat,start_lng,end_lat,end_lng,distance_miles,estimated_minutes,stops_count,points_earned,completed_at,created_at,updated_at,route_stops(id,location_id,stop_order,points_value,checked_in_at,created_at)').eq('id', routeId).eq('user_id', user.id).single();
-  if (error) throw error;
-  return data;
-}
-
-export async function createRoute({ name = 'My route', startLat = null, startLng = null, endLat = null, endLng = null } = {}) {
-  const user = await requireUser();
-  const { data, error } = await supabase.from('route_plans').insert({ user_id: user.id, name, start_lat: startLat, start_lng: startLng, end_lat: endLat, end_lng: endLng }).select('*').single();
-  if (error) throw error;
-  return data;
-}
-
-export async function prepareRouteDiscovery(routeId, { corridorMeters = 1000, expiresMinutes = 180 } = {}) {
-  await requireUser();
-  const { data, error } = await supabase.rpc('prepare_route_discovery', { p_route_id: routeId, p_corridor_meters: corridorMeters, p_expires_minutes: expiresMinutes });
-  if (error) throw error;
-  return data;
-}
-
-export async function listRouteDiscovery(routeId) {
-  await requireUser();
-  const { data, error } = await supabase.from('route_discovery_sessions').select('id,route_id,status,corridor_meters,discovered_at,expires_at,created_at,route_discovery_locations(id,location_id,trigger_radius_meters,distance_along_route_meters,source,discovered_at,geofence_enabled)').eq('route_id', routeId).order('created_at', { ascending: false }).limit(1).maybeSingle();
-  if (error) throw error;
-  return data;
-}
-
-export async function addRouteStop({ routeId, locationId, stopOrder, pointsValue = 10 }) {
-  const user = await requireUser();
-  const { data: route, error: routeError } = await supabase.from('route_plans').select('id').eq('id', routeId).eq('user_id', user.id).single();
-  if (routeError) throw routeError;
-  if (!route) throw new Error('Route not found.');
-  const { data, error } = await supabase.from('route_stops').insert({ route_id: routeId, location_id: locationId, stop_order: stopOrder, points_value: pointsValue }).select('*').single();
-  if (error) throw error;
-  return data;
-}
-
-export async function markRouteStarted(routeId) {
-  const user = await requireUser();
-  const { data, error } = await supabase.from('route_plans').update({ status: 'active' }).eq('id', routeId).eq('user_id', user.id).select('*').single();
-  if (error) throw error;
-  await supabase.from('route_events').insert({ route_id: routeId, user_id: user.id, event_type: 'started' });
-  return data;
-}
-
-export async function completeRoute(routeId) {
-  const user = await requireUser();
-  const { data, error } = await supabase.from('route_plans').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', routeId).eq('user_id', user.id).select('*').single();
-  if (error) throw error;
-  await supabase.from('route_events').insert({ route_id: routeId, user_id: user.id, event_type: 'route_completed', points_awarded: Number(data?.points_earned || 0) });
-  return data;
-}
+async function requireUser(){if(!supabase)throw new Error('Supabase is not configured.');const {data:{user},error}=await supabase.auth.getUser();if(error)throw error;if(!user)throw new Error('Sign in to use routes.');return user;}
+const ROUTE_FIELDS='id,name,status,start_lat,start_lng,end_lat,end_lng,route_geometry,distance_miles,estimated_minutes,stops_count,points_earned,completed_at,created_at,updated_at';
+export async function listMyRoutes({status=null,limit=25}={}){const user=await requireUser();let query=supabase.from('route_plans').select(ROUTE_FIELDS).eq('user_id',user.id).order('created_at',{ascending:false}).limit(limit);if(status)query=query.eq('status',status);const {data,error}=await query;if(error)throw error;return data??[];}
+export async function getRoute(routeId){const user=await requireUser();const {data,error}=await supabase.from('route_plans').select(`${ROUTE_FIELDS},route_stops(id,location_id,stop_order,points_value,checked_in_at,created_at)`).eq('id',routeId).eq('user_id',user.id).single();if(error)throw error;return data;}
+export async function createRoute({name='My route',startLat=null,startLng=null,endLat=null,endLng=null,routeGeometry=null,distanceMiles=0,estimatedMinutes=0}={}){const user=await requireUser();const {data,error}=await supabase.from('route_plans').insert({user_id:user.id,name,start_lat:startLat,start_lng:startLng,end_lat:endLat,end_lng:endLng,route_geometry:routeGeometry,distance_miles:distanceMiles,estimated_minutes:estimatedMinutes}).select('*').single();if(error)throw error;return data;}
+export async function prepareRouteDiscovery(routeId,{corridorMeters=1000,expiresMinutes=180}={}){await requireUser();const {data,error}=await supabase.rpc('prepare_route_discovery',{p_route_id:routeId,p_corridor_meters:corridorMeters,p_expires_minutes:expiresMinutes});if(error)throw error;return data;}
+export async function prepareRouteOfflinePack(routeId,{corridorMeters=1000,name='Route offline network'}={}){await requireUser();const session=await prepareRouteDiscovery(routeId,{corridorMeters});return createOfflinePack({kind:'route',name,routeId});}
+export async function listRouteDiscovery(routeId){await requireUser();const {data,error}=await supabase.from('route_discovery_sessions').select('id,route_id,status,corridor_meters,route_geometry,discovered_at,expires_at,created_at,route_discovery_locations(id,location_id,trigger_radius_meters,distance_along_route_meters,source,discovered_at,geofence_enabled)').eq('route_id',routeId).order('created_at',{ascending:false}).limit(1).maybeSingle();if(error)throw error;return data;}
+export async function addRouteStop({routeId,locationId,stopOrder,pointsValue=10}){const user=await requireUser();const {data:route,error:routeError}=await supabase.from('route_plans').select('id').eq('id',routeId).eq('user_id',user.id).single();if(routeError)throw routeError;if(!route)throw new Error('Route not found.');const {data,error}=await supabase.from('route_stops').insert({route_id:routeId,location_id:locationId,stop_order:stopOrder,points_value:pointsValue}).select('*').single();if(error)throw error;return data;}
+export async function markRouteStarted(routeId){const user=await requireUser();const {data,error}=await supabase.from('route_plans').update({status:'active'}).eq('id',routeId).eq('user_id',user.id).select('*').single();if(error)throw error;await supabase.from('route_events').insert({route_id:routeId,user_id:user.id,event_type:'started'});return data;}
+export async function completeRoute(routeId){const user=await requireUser();const {data,error}=await supabase.from('route_plans').update({status:'completed',completed_at:new Date().toISOString()}).eq('id',routeId).eq('user_id',user.id).select('*').single();if(error)throw error;await supabase.from('route_events').insert({route_id:routeId,user_id:user.id,event_type:'route_completed',points_awarded:Number(data?.points_earned||0)});return data;}
