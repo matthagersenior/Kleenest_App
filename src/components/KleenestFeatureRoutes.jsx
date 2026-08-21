@@ -17,7 +17,7 @@ import AdminCrudPage from './AdminCrudPage';
 const businessRoles=['business','owner','admin'];
 const fleetRoles=['fleet','admin'];
 const adminRoles=['admin'];
-const enterpriseRoles=['business','owner','admin'];
+const enterpriseRoles=['enterprise','business','owner','admin'];
 
 export default function KleenestFeatureRoutes(){return <>
   <Route path="/rewards" element={<RouteGuard requireAuth><RewardsPage/></RouteGuard>}/>
