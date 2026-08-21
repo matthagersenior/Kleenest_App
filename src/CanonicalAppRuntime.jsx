@@ -2,6 +2,7 @@ import { lazy,Suspense,useEffect,useState } from 'react';
 import { Link,useLocation } from 'react-router-dom';
 import { LocateFixed,Menu,Search,Signpost,Users,X } from 'lucide-react';
 import MapSurface from './components/MapSurface.jsx';
+import MapLegend from './components/MapLegend.jsx';
 import { listPlaces } from './services/places.js';
 import { signOut } from './services/auth.js';
 import { useAuth } from './context/AuthContext.jsx';
@@ -26,7 +27,7 @@ function MapWorkspace(){
 
   useEffect(()=>{
     let active=true;
-    if(!navigator.geolocation){setLoading(false);setError('Location is not supported by this browser.');return undefined;}
+    if(!navigator.geolocation){setLoading(false);setError('Location is not supported by this browser.');loadNetwork(null);return undefined;}
     navigator.geolocation.getCurrentPosition(
       position=>{if(!active)return;const location={latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy||0};setUserLocation(location);loadNetwork(location)},
       ()=>{if(!active)return;setError('Location permission was unavailable. Showing the network without proximity filtering.');loadNetwork(null)},
@@ -65,6 +66,7 @@ function MapWorkspace(){
         </div>
         {error&&<div className="empty-state"><h3>Map data notice</h3><p>{error}</p><button className="secondary" onClick={refreshLocation}><Signpost size={16}/>Retry location discovery</button></div>}
         {loading&&<div className="empty-state loading-state" role="status"><span className="loading-dot"/><div><strong>Updating the canonical map</strong><p>Loading locations and fresh map intelligence…</p></div></div>}
+        <MapLegend/>
         <MapSurface places={places} userLocation={userLocation} onLocation={setUserLocation}/>
       </section>
     </main>
