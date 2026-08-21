@@ -1,11 +1,12 @@
-import { useEffect,useState } from 'react';
+import { lazy,Suspense,useEffect,useState } from 'react';
 import { Link,useLocation } from 'react-router-dom';
 import { LocateFixed,Menu,Search,Signpost,Users,X } from 'lucide-react';
-import LegacyAppRuntime from './AppRuntime.jsx';
 import MapSurface from './components/MapSurface.jsx';
 import { listPlaces } from './services/places.js';
 import { signOut } from './services/auth.js';
 import { useAuth } from './context/AuthContext.jsx';
+
+const LegacyAppRuntime=lazy(()=>import('./AppRuntime.jsx'));
 
 function MapWorkspace(){
   const [userLocation,setUserLocation]=useState(null);
@@ -73,8 +74,10 @@ function MapWorkspace(){
   </div>;
 }
 
+function LegacyRuntimeFallback(){return <main className="empty-state loading-state" role="status"><span className="loading-dot"/><div><strong>Loading Kleenest</strong><p>Preparing the requested workspace…</p></div></main>}
+
 export default function CanonicalAppRuntime(){
   const location=useLocation();
   if(location.pathname==='/map')return <MapWorkspace/>;
-  return <LegacyAppRuntime/>;
+  return <Suspense fallback={<LegacyRuntimeFallback/>}><LegacyAppRuntime/></Suspense>;
 }
