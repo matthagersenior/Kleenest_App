@@ -1,0 +1,25 @@
+-- Keep one canonical index for each identical definition. These are non-constraint duplicates identified by the Supabase performance advisor.
+drop index if exists public.idx_analytics_business_created;
+drop index if exists public.idx_business_events_business_date;
+drop index if exists public.business_members_user_business_idx;
+drop index if exists public.check_ins_location_created_at_idx;
+drop index if exists public.check_ins_location_idx;
+drop index if exists public.check_ins_location_time_idx;
+drop index if exists public.idx_checkins_location_time;
+drop index if exists public.check_ins_location_checked_idx;
+drop index if exists public.check_ins_user_idx;
+drop index if exists public.check_ins_user_time_idx;
+drop index if exists public.check_ins_user_checked_idx;
+drop index if exists public.check_ins_user_location_time_idx;
+drop index if exists public.idx_check_ins_location_time;
+drop index if exists public.idx_checkins_user_location_time;
+drop index if exists public.idx_reviews_location_created;
+drop index if exists public.idx_reviews_user_created;
+drop index if exists public.reviews_user_idx;
+drop index if exists public.location_photos_location_created_idx;
+drop index if exists public.idx_location_photos_location_created;
+drop index if exists public.idx_lbv_location;
+drop index if exists public.idx_favorites_location;
+drop index if exists public.idx_dfe_location;
+drop index if exists public.partner_programs_business_enabled_idx;
+drop index if exists public.locations_source_identity_uidx;
