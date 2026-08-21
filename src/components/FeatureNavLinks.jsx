@@ -10,7 +10,7 @@ export default function FeatureNavLinks({business=false}){
   const canBusiness=hasCapability(capabilities,'business');
   const canFleet=hasCapability(capabilities,'fleet');
   return <div className="feature-nav" aria-label={business?'Business tools':'Kleenest features'}>
-    <Link className="feature-link feature-link-primary" to="/map"><Map size={16}/>Map</Link>
+    <Link className="feature-link feature-link-primary" to="/maps"><Map size={16}/>Map</Link>
     <Link className="feature-link" to="/discover"><Compass size={16}/>Discover</Link>
     {authenticated&&<Link className="feature-link" to="/rewards"><Gift size={16}/>Rewards</Link>}
     {authenticated&&<Link className="feature-link" to="/rewards#social"><Users size={16}/>Community</Link>}
