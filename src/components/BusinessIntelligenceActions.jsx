@@ -6,12 +6,14 @@ const ACTION_TYPES = Object.freeze(['demand_opportunity','quality_attention','ac
 
 function actionFor(type) {
   if (type === 'demand_opportunity') return { label: 'Create promotion', icon: Megaphone, action: 'create-promotion' };
-  if (type === 'quality_attention'||type === 'trusted_place') return { label: 'Create campaign', icon: Sparkles, action: 'create-campaign' };
-  if (type === 'activity_opportunity'||type === 'popular_place') return { label: 'Create event', icon: CalendarDays, action: 'create-event' };
+  if (type === 'quality_attention' || type === 'trusted_place') return { label: 'Create campaign', icon: Sparkles, action: 'create-campaign' };
+  if (type === 'activity_opportunity' || type === 'popular_place') return { label: 'Create event', icon: CalendarDays, action: 'create-event' };
   if (type === 'operational_attention') return { label: 'Review location', icon: ShieldCheck, action: null };
   if (type === 'high_activity_zone') return { label: 'Review route', icon: RouteIcon, action: null };
   return null;
 }
+
+function locationKey(location) { return location?.location_id ?? location?.id ?? null; }
 
 export default function BusinessIntelligenceActions({ businessId, items = [], locations = [], onComplete }) {
   const [busy, setBusy] = useState(null);
@@ -20,33 +22,37 @@ export default function BusinessIntelligenceActions({ businessId, items = [], lo
 
   async function runAction(item) {
     const type = item?.recommendation?.type;
-    const locationId = item?.location_id;
-    const location = locations.find(x => String(x.id) === String(locationId));
+    const locationId = item?.location_id ?? item?.locationId;
+    const location = locations.find(x => String(locationKey(x)) === String(locationId) || String(x?.id) === String(locationId));
     const config = actionFor(type);
-    if (!businessId || !location || !config) return;
+    if (!businessId || !location || !config) {
+      setError('This intelligence signal is missing a managed business location. Refresh the intelligence panel and try again.');
+      return;
+    }
 
-    const actionKey = `${location.id}:${type}`;
+    const managedLocationId = locationKey(location) ?? locationId;
+    const actionKey = `${managedLocationId}:${type}`;
     setBusy(actionKey);
     setMessage(null);
     setError(null);
     try {
       if (config.action) {
-        const result = await executeIntelligenceAction(businessId, { action: config.action, locationId }, {
-          locationId,
+        const result = await executeIntelligenceAction(businessId, { action: config.action, locationId: managedLocationId }, {
+          locationId: managedLocationId,
           title: type === 'demand_opportunity' ? `Local demand offer — ${location.name || 'your location'}` : type.includes('activity') || type === 'popular_place' ? `Community activity — ${location.name || 'location'}` : undefined,
           description: `Created from a Kleenest ${type.replaceAll('_', ' ')} signal.`,
           name: `Quality improvement — ${location.name || 'location'}`,
           goal: 'Improve community experience and review sentiment.'
         });
-        const detail = { locationId, action: config.action, result, source: 'business_intelligence' };
+        const detail = { locationId: managedLocationId, action: config.action, result, source: 'business_intelligence' };
         window.dispatchEvent(new CustomEvent('kleenest:intelligence-action-completed', { detail }));
         window.dispatchEvent(new CustomEvent('kleenest:intelligence-updated', { detail }));
         await onComplete?.(detail);
         setMessage(`${config.label} completed for ${location.name || 'the selected location'}.`);
       } else if (type === 'high_activity_zone') {
-        window.location.assign(`/fleet?location=${encodeURIComponent(locationId)}`);
+        window.location.assign(`/fleet?location=${encodeURIComponent(managedLocationId)}`);
       } else {
-        window.location.assign(`/place/${encodeURIComponent(locationId)}`);
+        window.location.assign(`/place/${encodeURIComponent(managedLocationId)}`);
       }
     } catch (e) {
       setError(e.message || 'Unable to complete the intelligence action.');
@@ -66,7 +72,7 @@ export default function BusinessIntelligenceActions({ businessId, items = [], lo
     <div className="business-intelligence-list">
       {actionable.slice(0, 8).map(item => {
         const type = item.recommendation.type;
-        const actionKey = `${item.location_id}:${type}`;
+        const actionKey = `${item.location_id ?? item.locationId}:${type}`;
         const config = actionFor(type);
         const Icon = config.icon;
         return <div className="business-row" key={actionKey}>
