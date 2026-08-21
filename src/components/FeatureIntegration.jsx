@@ -2,14 +2,17 @@ import RewardNotificationBridge from './RewardNotificationBridge';
 import LocationActivityBridge from './LocationActivityBridge';
 import LocationVerificationBridge from './LocationVerificationBridge';
 import PushNotificationBridge from './PushNotificationBridge';
+import NetworkRealtimeBridge from './NetworkRealtimeBridge';
+import NetworkEventToast from './NetworkEventToast';
 
-// AppRuntime owns application routes. This component is intentionally limited
-// to cross-cutting integrations so feature pages are mounted exactly once.
+// Cross-cutting integrations only; application routes remain in AppRuntime.
 export default function FeatureIntegration(){
   return <>
     <RewardNotificationBridge/>
     <LocationActivityBridge/>
     <LocationVerificationBridge/>
     <PushNotificationBridge/>
+    <NetworkRealtimeBridge/>
+    <NetworkEventToast/>
   </>;
 }
