@@ -20,28 +20,31 @@ function MapWorkspace(){
     if(!navigator.geolocation){setLoading(false);setError('Location is not supported by this browser.');return undefined;}
     navigator.geolocation.getCurrentPosition(
       position=>active&&setUserLocation({latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy||0}),
-      ()=>active&&setLoading(false),
+      ()=>active&&setError('Location permission was unavailable. Showing the network without proximity filtering.'),
       {enableHighAccuracy:true,maximumAge:30000,timeout:10000}
     );
     return()=>{active=false};
   },[]);
 
   useEffect(()=>{
-    if(!userLocation)return undefined;
     let active=true;
     setLoading(true);setError(null);
-    listPlaces({category:'all',limit:500,userLocation,radiusKm:30,sort:'recommended'})
+    listPlaces({category:'all',limit:500,...(userLocation?{userLocation,radiusKm:30}:{sort:'recommended'})})
       .then(rows=>active&&setPlaces(Array.isArray(rows)?rows:[]))
       .catch(err=>active&&setError(err?.message||'Unable to load the nearby network.'))
       .finally(()=>active&&setLoading(false));
     return()=>{active=false};
   },[userLocation]);
 
-  const refreshLocation=()=>navigator.geolocation?.getCurrentPosition(
-    position=>setUserLocation({latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy||0}),
-    ()=>setError('We could not access your location. Check browser location permission.'),
-    {enableHighAccuracy:true,maximumAge:0,timeout:10000}
-  );
+  const refreshLocation=()=>{
+    if(!navigator.geolocation){setError('Location is not supported by this browser.');return;}
+    setError(null);
+    navigator.geolocation.getCurrentPosition(
+      position=>setUserLocation({latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy||0}),
+      ()=>setError('We could not access your location. Check browser location permission.'),
+      {enableHighAccuracy:true,maximumAge:0,timeout:10000}
+    );
+  };
 
   return <div className="app-shell map-workspace-shell">
     <header className="topbar">
@@ -61,8 +64,9 @@ function MapWorkspace(){
           <div><span className="eyebrow">LIVE LOCATION NETWORK</span><h1>Explore Kleenest</h1><p>Search nearby businesses, bathrooms, amenities, brands, fleet opportunities, events and rewards from the canonical network.</p></div>
           <div className="hero-actions"><button className="secondary" onClick={refreshLocation}><LocateFixed size={17}/>{userLocation?'Refresh location':'Use my location'}</button><Link className="secondary" to="/discover"><Search size={17}/>Browse all places</Link></div>
         </div>
-        {error&&<div className="empty-state"><h3>Nearby network temporarily unavailable</h3><p>{error}</p><button className="secondary" onClick={refreshLocation}><Signpost size={16}/>Retry location discovery</button></div>}
-        {loading&&!places.length?<div className="empty-state loading-state"><span className="loading-dot"/><div><strong>Building your nearby network</strong><p>Loading canonical locations and fresh map intelligence…</p></div></div>:<MapSurface places={places} userLocation={userLocation} onLocation={setUserLocation}/>} 
+        {error&&<div className="empty-state"><h3>Map data notice</h3><p>{error}</p><button className="secondary" onClick={refreshLocation}><Signpost size={16}/>Retry location discovery</button></div>}
+        {loading&&<div className="empty-state loading-state" role="status"><span className="loading-dot"/><div><strong>Updating the canonical map</strong><p>Loading locations and fresh map intelligence…</p></div></div>}
+        <MapSurface places={places} userLocation={userLocation} onLocation={setUserLocation}/>
       </section>
     </main>
     <footer><span>© {new Date().getFullYear()} Kleenest</span><span>Find it. Check it. Know it.</span></footer>
