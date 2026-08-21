@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { CheckCircle2, Megaphone, Route as RouteIcon, ShieldCheck, Sparkles } from 'lucide-react';
+import { CheckCircle2, Megaphone, Route as RouteIcon, ShieldCheck, Sparkles, CalendarDays } from 'lucide-react';
 import { executeIntelligenceAction } from '../services/intelligence';
 
-const ACTION_TYPES = Object.freeze(['demand_opportunity','quality_attention','activity_opportunity','operational_attention','high_activity_zone']);
+const ACTION_TYPES = Object.freeze(['demand_opportunity','quality_attention','activity_opportunity','operational_attention','high_activity_zone','popular_place','trusted_place']);
 
 function actionFor(type) {
   if (type === 'demand_opportunity') return { label: 'Create promotion', icon: Megaphone, action: 'create-promotion' };
-  if (type === 'quality_attention') return { label: 'Create campaign', icon: Sparkles, action: 'create-campaign' };
-  if (type === 'activity_opportunity') return { label: 'Create event', icon: RouteIcon, action: 'create-event' };
-  if (type === 'operational_attention') return { label: 'Review location', icon: CheckCircle2, action: null };
+  if (type === 'quality_attention'||type === 'trusted_place') return { label: 'Create campaign', icon: Sparkles, action: 'create-campaign' };
+  if (type === 'activity_opportunity'||type === 'popular_place') return { label: 'Create event', icon: CalendarDays, action: 'create-event' };
+  if (type === 'operational_attention') return { label: 'Review location', icon: ShieldCheck, action: null };
   if (type === 'high_activity_zone') return { label: 'Review route', icon: RouteIcon, action: null };
   return null;
 }
@@ -33,11 +33,7 @@ export default function BusinessIntelligenceActions({ businessId, items = [], lo
       if (config.action) {
         const result = await executeIntelligenceAction(businessId, { action: config.action, locationId }, {
           locationId,
-          title: type === 'demand_opportunity'
-            ? `Local demand offer — ${location.name || 'your location'}`
-            : type === 'activity_opportunity'
-              ? `Community activity — ${location.name || 'location'}`
-              : undefined,
+          title: type === 'demand_opportunity' ? `Local demand offer — ${location.name || 'your location'}` : type.includes('activity') || type === 'popular_place' ? `Community activity — ${location.name || 'location'}` : undefined,
           description: `Created from a Kleenest ${type.replaceAll('_', ' ')} signal.`,
           name: `Quality improvement — ${location.name || 'location'}`,
           goal: 'Improve community experience and review sentiment.'
