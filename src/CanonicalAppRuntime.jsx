@@ -6,100 +6,21 @@ import MapLegend from './components/MapLegend.jsx';
 import { listPlaces } from './services/places.js';
 import { signOut } from './services/auth.js';
 import { createOfflinePack,getCachedLocations,getCachedPacks,getPackFreshness } from './services/offlinePacks.js';
-import { signOut as authSignOut } from './services/auth.js';
 import { useAuth } from './context/AuthContext.jsx';
 
 const LegacyAppRuntime=lazy(()=>import('./AppRuntime.jsx'));
-
 function cachedPlaceRows(rows){return rows.map(row=>row?.snapshot?{...row.snapshot,location_id:row.location_id}:row?.snapshot||row).filter(Boolean);}
 function boundsAround(location,radiusKm=10){const lat=Number(location?.latitude),lng=Number(location?.longitude);if(!Number.isFinite(lat)||!Number.isFinite(lng))return null;const dLat=radiusKm/111;const dLng=radiusKm/(111*Math.max(0.2,Math.cos(lat*Math.PI/180)));return {west:lng-dLng,south:lat-dLat,east:lng+dLng,north:lat+dLat};}
 
 function MapWorkspace(){
-  const [userLocation,setUserLocation]=useState(null);
-  const [places,setPlaces]=useState([]);
-  const [loading,setLoading]=useState(true);
-  const [error,setError]=useState(null);
-  const [menuOpen,setMenuOpen]=useState(false);
-  const [offline,setOffline]=useState(typeof navigator!=='undefined'&&!navigator.onLine);
-  const [offlinePack,setOfflinePack]=useState(null);
-  const [savingOffline,setSavingOffline]=useState(false);
-  const { authenticated }=useAuth();
-
-  const loadCached=async()=>{const packs=await getCachedPacks();const pack=packs[0];const rows=await getCachedLocations(pack?.id);setOfflinePack(pack||null);setPlaces(cachedPlaceRows(rows));setLoading(false);if(!rows.length)setError('No saved map area is available on this device yet.');};
-  const loadNetwork=async(location)=>{
-    setLoading(true);setError(null);
-    try{const rows=await listPlaces({category:'all',limit:500,...(location?{userLocation:location,radiusKm:50}:{sort:'recommended'})});setPlaces(Array.isArray(rows)?rows:[]);setOffline(false);}
-    catch(err){setOffline(true);try{await loadCached();}catch{setError(err?.message||'Unable to load the nearby network.');}}
-    finally{setLoading(false);}
-  };
-
-  useEffect(()=>{
-    const onOnline=()=>{setOffline(false);loadNetwork(userLocation);};
-    const onOffline=()=>{setOffline(true);loadCached().catch(()=>{});};
-    window.addEventListener('online',onOnline);window.addEventListener('offline',onOffline);
-    getCachedPacks().then(rows=>setOfflinePack(rows[0]||null)).catch(()=>{});
-    if(!navigator.geolocation){setLoading(false);setError('Location is not supported by this browser.');loadNetwork(null);return()=>{window.removeEventListener('online',onOnline);window.removeEventListener('offline',onOffline);};}
-    navigator.geolocation.getCurrentPosition(
-      position=>{const location={latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy||0};setUserLocation(location);loadNetwork(location)},
-      ()=>{setError('Location permission was unavailable. Showing the network without proximity filtering.');loadNetwork(null)},
-      {enableHighAccuracy:true,maximumAge:30000,timeout:10000}
-    );
-    return()=>{window.removeEventListener('online',onOnline);window.removeEventListener('offline',onOffline);};
-  },[]);
-
-  const refreshLocation=()=>{
-    if(!navigator.geolocation){setError('Location is not supported by this browser.');return;}
-    setError(null);
-    navigator.geolocation.getCurrentPosition(
-      position=>{const location={latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy||0};setUserLocation(location);loadNetwork(location)},
-      ()=>setError('We could not access your location. Check browser location permission.'),
-      {enableHighAccuracy:true,maximumAge:0,timeout:10000}
-    );
-  };
-
-  const saveAreaOffline=async()=>{
-    if(!authenticated){setError('Sign in to save an offline map area.');return;}
-    const bounds=boundsAround(userLocation,10);if(!bounds){setError('Use your location before saving an offline area.');return;}
-    setSavingOffline(true);setError(null);
-    try{const pack=await createOfflinePack({kind:'area',name:'Nearby Kleenest map',bounds});setOfflinePack(pack);setPlaces(cachedPlaceRows(await getCachedLocations(pack.id)));}
-    catch(err){setError(err?.message||'Unable to save this map area offline.');}
-    finally{setSavingOffline(false);}
-  };
-
-  const freshness=getPackFreshness(offlinePack);
-  return <div className="app-shell map-workspace-shell">
-    <header className="topbar">
-      <Link className="brand" to="/">Kleenest</Link>
-      <nav className={`nav ${menuOpen?'open':''}`}>
-        <Link to="/">Home</Link><Link className="active" to="/map">Map</Link><Link to="/discover">Discover</Link><Link to="/profile">Profile</Link>
-        {authenticated&&<Link to="/social"><Users size={15}/>Social</Link>}
-      </nav>
-      <div className="header-actions">
-        {authenticated?<button className="secondary compact" onClick={authSignOut}>Sign out</button>:<Link className="primary compact" to="/profile">Sign in</Link>}
-        <button className="icon-button menu-button" onClick={()=>setMenuOpen(v=>!v)} aria-label="Open menu">{menuOpen?<X/>:<Menu/>}</button>
-      </div>
-    </header>
-    <main>
-      <section className="page map-page-canonical">
-        <div className="page-header">
-          <div><span className="eyebrow">LIVE LOCATION NETWORK</span><h1>Explore Kleenest</h1><p>Search nearby businesses, bathrooms, amenities, brands, fleet opportunities, events and rewards from the canonical network.</p></div>
-          <div className="hero-actions"><button className="secondary" onClick={saveAreaOffline} disabled={savingOffline||offline}><Download size={17}/>{savingOffline?'Saving…':'Save this area offline'}</button><button className="secondary" onClick={refreshLocation}><LocateFixed size={17}/>{userLocation?'Refresh location':'Use my location'}</button><Link className="secondary" to="/discover"><Search size={17}/>Browse all places</Link></div>
-        </div>
-        <div className={`offline-status ${offline?'offline':'online'}`} role="status"><span>{offline?<WifiOff size={16}/>:<RefreshCw size={16}/>}</span><div><strong>{offline?'Offline map mode':'Map network connected'}</strong><span>{offlinePack?`Saved area: ${freshness.label} · ${new Date(offlinePack.cached_at).toLocaleString()}`:'Save an area to keep locations available without connectivity.'}</span></div></div>
-        {error&&<div className="empty-state"><h3>Map data notice</h3><p>{error}</p><button className="secondary" onClick={refreshLocation}><Signpost size={16}/>Retry location discovery</button></div>}
-        {loading&&<div className="empty-state loading-state" role="status"><span className="loading-dot"/><div><strong>Updating the canonical map</strong><p>Loading locations and fresh map intelligence…</p></div></div>}
-        <MapLegend/>
-        <MapSurface places={places} userLocation={userLocation} onLocation={setUserLocation}/>
-      </section>
-    </main>
-    <footer><span>© {new Date().getFullYear()} Kleenest</span><span>Find it. Check it. Know it.</span></footer>
-  </div>;
+ const [userLocation,setUserLocation]=useState(null);const [places,setPlaces]=useState([]);const [loading,setLoading]=useState(true);const [error,setError]=useState(null);const [menuOpen,setMenuOpen]=useState(false);const [offline,setOffline]=useState(typeof navigator!=='undefined'&&!navigator.onLine);const [offlinePack,setOfflinePack]=useState(null);const [savingOffline,setSavingOffline]=useState(false);const {authenticated}=useAuth();
+ const loadCached=async()=>{const packs=await getCachedPacks();const pack=packs[0];const rows=await getCachedLocations(pack?.id);setOfflinePack(pack||null);setPlaces(cachedPlaceRows(rows));setLoading(false);if(!rows.length)setError('No saved map area is available on this device yet.');};
+ const loadNetwork=async(location)=>{setLoading(true);setError(null);try{const rows=await listPlaces({category:'all',limit:500,...(location?{userLocation:location,radiusKm:50}:{sort:'recommended'})});setPlaces(Array.isArray(rows)?rows:[]);setOffline(false);}catch(err){setOffline(true);try{await loadCached();}catch{setError(err?.message||'Unable to load the nearby network.');}}finally{setLoading(false);}};
+ useEffect(()=>{const onOnline=()=>{setOffline(false);loadNetwork(userLocation);};const onOffline=()=>{setOffline(true);loadCached().catch(()=>{});};window.addEventListener('online',onOnline);window.addEventListener('offline',onOffline);getCachedPacks().then(rows=>setOfflinePack(rows[0]||null)).catch(()=>{});if(!navigator.geolocation){setLoading(false);setError('Location is not supported by this browser.');loadNetwork(null);return()=>{window.removeEventListener('online',onOnline);window.removeEventListener('offline',onOffline);};}navigator.geolocation.getCurrentPosition(position=>{const location={latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy||0};setUserLocation(location);loadNetwork(location)},()=>{setError('Location permission was unavailable. Showing the network without proximity filtering.');loadNetwork(null)},{enableHighAccuracy:true,maximumAge:30000,timeout:10000});return()=>{window.removeEventListener('online',onOnline);window.removeEventListener('offline',onOffline);};},[]);
+ const refreshLocation=()=>{if(!navigator.geolocation){setError('Location is not supported by this browser.');return;}setError(null);navigator.geolocation.getCurrentPosition(position=>{const location={latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy||0};setUserLocation(location);loadNetwork(location)},()=>setError('We could not access your location. Check browser location permission.'),{enableHighAccuracy:true,maximumAge:0,timeout:10000});};
+ const saveAreaOffline=async()=>{if(!authenticated){setError('Sign in to save an offline map area.');return;}const bounds=boundsAround(userLocation,10);if(!bounds){setError('Use your location before saving an offline area.');return;}setSavingOffline(true);setError(null);try{const pack=await createOfflinePack({kind:'area',name:'Nearby Kleenest map',bounds});setOfflinePack(pack);setPlaces(cachedPlaceRows(await getCachedLocations(pack.id)));}catch(err){setError(err?.message||'Unable to save this map area offline.');}finally{setSavingOffline(false);}};
+ const freshness=getPackFreshness(offlinePack);
+ return <div className="app-shell map-workspace-shell"><header className="topbar"><Link className="brand" to="/">Kleenest</Link><nav className={`nav ${menuOpen?'open':''}`}><Link to="/">Home</Link><Link className="active" to="/map">Map</Link><Link to="/discover">Discover</Link><Link to="/profile">Profile</Link>{authenticated&&<Link to="/social"><Users size={15}/>Social</Link>}</nav><div className="header-actions">{authenticated?<button className="secondary compact" onClick={signOut}>Sign out</button>:<Link className="primary compact" to="/profile">Sign in</Link>}<button className="icon-button menu-button" onClick={()=>setMenuOpen(v=>!v)} aria-label="Open menu">{menuOpen?<X/>:<Menu/>}</button></div></header><main><section className="page map-page-canonical"><div className="page-header"><div><span className="eyebrow">LIVE LOCATION NETWORK</span><h1>Explore Kleenest</h1><p>Search nearby businesses, bathrooms, amenities, brands, fleet opportunities, events and rewards from the canonical network.</p></div><div className="hero-actions"><button className="secondary" onClick={saveAreaOffline} disabled={savingOffline||offline}><Download size={17}/>{savingOffline?'Saving…':'Save this area offline'}</button><button className="secondary" onClick={refreshLocation}><LocateFixed size={17}/>{userLocation?'Refresh location':'Use my location'}</button><Link className="secondary" to="/discover"><Search size={17}/>Browse all places</Link></div></div><div className={`offline-status ${offline?'offline':'online'}`} role="status"><span>{offline?<WifiOff size={16}/>:<RefreshCw size={16}/>}</span><div><strong>{offline?'Offline map mode':'Map network connected'}</strong><span>{offlinePack?`Saved area: ${freshness.label} · ${new Date(offlinePack.cached_at).toLocaleString()}`:'Save an area to keep locations available without connectivity.'}</span></div></div>{error&&<div className="empty-state"><h3>Map data notice</h3><p>{error}</p><button className="secondary" onClick={refreshLocation}><Signpost size={16}/>Retry location discovery</button></div>}{loading&&<div className="empty-state loading-state" role="status"><span className="loading-dot"/><div><strong>Updating the canonical map</strong><p>Loading locations and fresh map intelligence…</p></div></div>}<MapLegend/><MapSurface places={places} userLocation={userLocation} onLocation={setUserLocation}/></section></main><footer><span>© {new Date().getFullYear()} Kleenest</span><span>Find it. Check it. Know it.</span></footer></div>;
 }
-
 function LegacyRuntimeFallback(){return <main className="empty-state loading-state" role="status"><span className="loading-dot"/><div><strong>Loading Kleenest</strong><p>Preparing the requested workspace…</p></div></main>}
-
-export default function CanonicalAppRuntime(){
-  const location=useLocation();
-  if(location.pathname==='/map')return <MapWorkspace/>;
-  return <Suspense fallback={<LegacyRuntimeFallback/>}><LegacyAppRuntime/></Suspense>;
-}
+export default function CanonicalAppRuntime(){const location=useLocation();if(location.pathname==='/map')return <MapWorkspace/>;return <Suspense fallback={<LegacyRuntimeFallback/>}><LegacyAppRuntime/></Suspense>;}
