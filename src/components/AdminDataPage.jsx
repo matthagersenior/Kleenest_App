@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Database, RefreshCw, MapPinned, Layers, MapPinCheck, ShieldCheck, ChevronDown, Wrench, Radio, Users, Building2, CheckCircle2 } from 'lucide-react';
+import { Database, RefreshCw, MapPinned, Layers, MapPinCheck, ShieldCheck, ChevronDown, Wrench, Radio, Users, Building2, CheckCircle2, Settings2 } from 'lucide-react';
 import { runAdminTool, runDataIngest, backfillLocationAddresses } from '../services/adminData';
 import { useAuth } from '../context/AuthContext';
 import { hasCapability } from '../domain/capabilities';
@@ -14,6 +14,7 @@ export default function AdminDataPage(){
  const ingest=(key,action,payload)=>run(key,()=>runDataIngest(action,payload));
  return <section className="page admin-page"><div className="page-header"><div><span className="eyebrow">ADMINISTRATION</span><h1>Admin tools</h1><p>Operate the Kleenest network. Ingestion stays secondary to administration.</p></div><Wrench size={28}/></div>
  <div className="admin-tool-grid">
+   <Link className="detail-panel admin-tool-card" to="/admin/crud"><Settings2 size={22}/><div><strong>Network CRUD</strong><span>Manage platform records, users, businesses, locations, fleet, data, and configuration.</span></div></Link>
    <Link className="detail-panel admin-tool-card" to="/fleet"><Radio size={22}/><div><strong>Fleet operations</strong><span>Operational signals, route activity, and fleet intelligence.</span></div></Link>
    <Link className="detail-panel admin-tool-card" to="/business/dashboard"><Building2 size={22}/><div><strong>Business operations</strong><span>Businesses, locations, QR activity, intelligence, and performance.</span></div></Link>
    <Link className="detail-panel admin-tool-card" to="/map"><MapPinned size={22}/><div><strong>Network map</strong><span>Canonical locations and GPS discovery.</span></div></Link>
