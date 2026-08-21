@@ -18,16 +18,31 @@ const STATUS=[
   ['⌁','Community signal','Reviews, check-ins, arrivals, observations or other network evidence','signal'],
 ];
 
+const BRAND_EXAMPLES=[
+  ['🏪','Branded locations','Taco Bell, Walmart and other recognizable operators remain ordinary map locations.','brand'],
+  ['⌖','Brand + category','A brand is shown on its pin while the pin glyph communicates the location category.','brand-category'],
+  ['✓','Trust layered on top','Verification, favorites and community evidence modify the same location instead of creating duplicate map categories.','brand-trust'],
+];
+
 export default function MapLegend(){
   return <aside className="kleenest-map-legend" aria-label="Kleenest map legend">
     <div className="map-legend-heading">
       <div><span className="eyebrow">KLEENEST NETWORK</span><strong>Map legend</strong></div>
-      <span>Categories and trust signals work together.</span>
+      <span>One location can have a brand, category, trust state and community signals at the same time.</span>
     </div>
     <div className="map-legend-section">
       <span className="map-legend-section-title">Place categories</span>
       <div className="map-legend-grid">
         {CATEGORIES.map(([glyph,title,description,key])=><div className={`map-legend-item category ${key}`} key={key}>
+          <span className="map-legend-glyph" aria-hidden="true">{glyph}</span>
+          <span><strong>{title}</strong><small>{description}</small></span>
+        </div>)}
+      </div>
+    </div>
+    <div className="map-legend-section">
+      <span className="map-legend-section-title">Brand identity</span>
+      <div className="map-legend-status-grid">
+        {BRAND_EXAMPLES.map(([glyph,title,description,key])=><div className={`map-legend-item status ${key}`} key={key}>
           <span className="map-legend-glyph" aria-hidden="true">{glyph}</span>
           <span><strong>{title}</strong><small>{description}</small></span>
         </div>)}
@@ -42,6 +57,6 @@ export default function MapLegend(){
         </div>)}
       </div>
     </div>
-    <div className="map-legend-note">A Taco Bell, Walmart, local restaurant, gas station or other discovered brand is a normal map location. Verification, favorites and community evidence are signals layered onto that location—not separate categories.</div>
+    <div className="map-legend-note">Taco Bell, Walmart, local restaurants, gas stations and other discovered brands are map locations—not separate trust categories. Their brand identity, business relationship, bathroom intelligence, verification state, favorite state and community evidence all travel with the same location record.</div>
   </aside>;
 }
