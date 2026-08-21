@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { copyFileSync } from 'node:fs';
+import { copyFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 export default defineConfig({
@@ -11,7 +11,12 @@ export default defineConfig({
       name: 'github-pages-spa-fallback',
       closeBundle() {
         const dist = resolve(process.cwd(), 'dist');
-        copyFileSync(resolve(dist, 'index.html'), resolve(dist, '404.html'));
+        const index = resolve(dist, 'index.html');
+        const fallback = resolve(dist, '404.html');
+        if (!existsSync(index)) {
+          throw new Error(`GitHub Pages SPA fallback: Vite did not emit ${index}`);
+        }
+        copyFileSync(index, fallback);
       }
     }
   ],
