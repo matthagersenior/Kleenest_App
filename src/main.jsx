@@ -16,7 +16,7 @@ function Startup(){
     assertRuntimeConfig();
     return <><App/><FeatureIntegration/></>;
   }catch(error){
-    return <main className="page"><div className="empty-state" role="alert"><h1>Kleenest is not configured</h1><p>{error.message}</p><p>Add the required production environment variables and reload the application.</p></div></main>;
+    return <main style={{fontFamily:'system-ui,sans-serif',maxWidth:720,margin:'48px auto',padding:24,lineHeight:1.5}}><h1>Kleenest is not configured</h1><p>{error.message}</p><p>The deployment is missing its production Supabase configuration.</p></main>;
   }
 }
 
