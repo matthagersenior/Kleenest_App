@@ -6,14 +6,18 @@ import LeaderboardPage from '../pages/LeaderboardPage';
 import BusinessEntitlementsPage from '../pages/BusinessEntitlementsPage';
 import BusinessPerformancePage from '../pages/BusinessPerformancePage';
 import BusinessIntelligencePage from '../pages/BusinessIntelligencePage';
+import BusinessManagePage from '../pages/BusinessManagePage';
 import FleetReviewPage from '../pages/FleetReviewPage';
+
+const businessRoles=['business','owner','admin'];
 
 export default function KleenestFeatureRoutes(){return <>
   <Route path="/rewards" element={<RouteGuard requireAuth><RewardsPage/></RouteGuard>}/>
   <Route path="/contests" element={<RouteGuard requireAuth><ContestsPage/></RouteGuard>}/>
   <Route path="/leaderboard" element={<RouteGuard requireAuth><LeaderboardPage/></RouteGuard>}/>
-  <Route path="/business/intelligence" element={<RouteGuard requireAuth roles={['business','owner','admin']}><BusinessIntelligencePage/></RouteGuard>}/>
-  <Route path="/fleet" element={<RouteGuard requireAuth roles={['business','owner','admin']}><FleetReviewPage/></RouteGuard>}/>
-  <Route path="/business/entitlements" element={<RouteGuard requireAuth roles={['business','owner','admin']}><BusinessEntitlementsPage/></RouteGuard>}/>
-  <Route path="/business/performance" element={<RouteGuard requireAuth roles={['business','owner','admin']}><BusinessPerformancePage/></RouteGuard>}/>
+  <Route path="/business/intelligence" element={<RouteGuard requireAuth roles={businessRoles}><BusinessIntelligencePage/></RouteGuard>}/>
+  <Route path="/business/manage" element={<RouteGuard requireAuth roles={businessRoles}><BusinessManagePage/></RouteGuard>}/>
+  <Route path="/fleet" element={<RouteGuard requireAuth roles={businessRoles}><FleetReviewPage/></RouteGuard>}/>
+  <Route path="/business/entitlements" element={<RouteGuard requireAuth roles={businessRoles}><BusinessEntitlementsPage/></RouteGuard>}/>
+  <Route path="/business/performance" element={<RouteGuard requireAuth roles={businessRoles}><BusinessPerformancePage/></RouteGuard>}/>
 </>}
