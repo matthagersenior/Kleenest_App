@@ -9,11 +9,13 @@ export default function FeatureNavLinks({business=false}){
   const canPremium=hasCapability(capabilities,'premium');
   const canBusiness=hasCapability(capabilities,'business');
   const canFleet=hasCapability(capabilities,'fleet');
+  const canAdmin=hasCapability(capabilities,'admin');
   return <div className="feature-nav" aria-label={business?'Business tools':'Kleenest features'}>
     <Link className="feature-link feature-link-primary" to="/map"><Map size={16}/>Map</Link>
     <Link className="feature-link" to="/discover"><Compass size={16}/>Discover</Link>
     {authenticated&&<Link className="feature-link" to="/rewards"><Gift size={16}/>Rewards</Link>}
-    {authenticated&&<Link className="feature-link" to="/rewards#social"><Users size={16}/>Community</Link>}
+    {authenticated&&<Link className="feature-link" to="/games"><Gamepad2 size={16}/>Play</Link>}
+    {authenticated&&<Link className="feature-link" to="/social"><Users size={16}/>Community</Link>}
     {authenticated&&<Link className="feature-link" to="/notifications"><Bell size={16}/>Notifications</Link>}
     {authenticated&&<Link className="feature-link" to="/contests"><Trophy size={16}/>Contests</Link>}
     {authenticated&&<Link className="feature-link" to="/leaderboard"><Medal size={16}/>Leaderboard</Link>}
@@ -27,6 +29,7 @@ export default function FeatureNavLinks({business=false}){
     </>}
     {canFleet&&<Link className="feature-link" to="/fleet"><RouteIcon size={16}/>Fleet</Link>}
     {canPremium&&<Link className="feature-link" to="/rewards"><Gift size={16}/>Premium rewards</Link>}
+    {canAdmin&&<Link className="feature-link" to="/admin/crud"><Sparkles size={16}/>Admin</Link>}
   </div>;
 }
 function BuildingIcon(){return <span aria-hidden="true" style={{fontSize:16,lineHeight:1}}>▦</span>}
