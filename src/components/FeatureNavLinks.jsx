@@ -14,6 +14,7 @@ export default function FeatureNavLinks({business=false}){
   return <div className="feature-nav" aria-label={business?'Business tools':'Kleenest features'}>
     <Link className="feature-link feature-link-primary" to="/map"><Map size={16}/>Map</Link>
     <Link className="feature-link" to="/discover"><Compass size={16}/>Discover</Link>
+    {authenticated&&<Link className="feature-link" to="/route"><RouteIcon size={16}/>Route</Link>}
     {authenticated&&<Link className="feature-link" to="/rewards"><Gift size={16}/>Rewards</Link>}
     {authenticated&&<Link className="feature-link" to="/games"><Gamepad2 size={16}/>Play</Link>}
     {authenticated&&<Link className="feature-link" to="/social"><Users size={16}/>Community</Link>}
