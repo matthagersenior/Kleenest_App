@@ -21,17 +21,20 @@ export const WORKSPACE_NAVIGATION = Object.freeze({
   business: Object.freeze([
     { id: 'overview', label: 'Overview', path: '/business' },
     { id: 'intelligence', label: 'Intelligence', path: '/business/intelligence' },
+    { id: 'engage', label: 'Engage', path: '/business/manage' },
     { id: 'analytics', label: 'Analytics', path: '/business/performance' },
   ]),
   fleet: Object.freeze([
-    { id: 'operations', label: 'Operations', path: '/fleet-operations' },
+    { id: 'operations', label: 'Operations', path: '/fleet' },
     { id: 'routes', label: 'Routes', path: '/route' },
   ]),
   enterprise: Object.freeze([
-    { id: 'command', label: 'Command', path: '/business' },
+    { id: 'command', label: 'Command', path: '/enterprise' },
   ]),
   admin: Object.freeze([
-    { id: 'control', label: 'Control Room', path: '/profile' },
+    { id: 'data', label: 'Data', path: '/admin/data' },
+    { id: 'crud', label: 'Control Room', path: '/admin/crud' },
+    { id: 'capabilities', label: 'Capabilities', path: '/capabilities' },
   ]),
 });
 
