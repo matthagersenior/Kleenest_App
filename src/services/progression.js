@@ -46,3 +46,49 @@ export async function listMyProgressionEvents({ limit = 50 } = {}) {
   if (error) throw error;
   return data ?? [];
 }
+
+export async function recordProgressionAction(action, referenceId = null) {
+  await requireUser();
+  if (!action) throw new Error('A progression action is required.');
+  const { data, error } = await supabase.rpc('record_progression_action', { p_action: action, p_reference_id: referenceId });
+  if (error) throw error;
+  return data;
+}
+
+export async function recordGamificationActivity(activity, referenceId = null) {
+  await requireUser();
+  if (!activity) throw new Error('An activity is required.');
+  const { data, error } = await supabase.rpc('record_gamification_activity', { p_activity: activity, p_reference_id: referenceId });
+  if (error) throw error;
+  return data;
+}
+
+export async function recordProgressionMetric({ metric, sourceType, sourceId = null, quantity = 1, pointsAwarded = 0, metadata = {} } = {}) {
+  await requireUser();
+  if (!metric || !sourceType) throw new Error('Metric and source type are required.');
+  const { data, error } = await supabase.rpc('record_progression_metric_event', {
+    p_metric: metric,
+    p_source_type: sourceType,
+    p_source_id: sourceId,
+    p_quantity: Number(quantity),
+    p_points_awarded: Number(pointsAwarded),
+    p_metadata: metadata || {},
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function completeProgressionChallenge(challengeId) {
+  await requireUser();
+  if (!challengeId) throw new Error('A challenge is required.');
+  const { data, error } = await supabase.rpc('complete_progression_challenge', { p_challenge_id: challengeId });
+  if (error) throw error;
+  return data;
+}
+
+export async function evaluateMyBadges() {
+  const user = await requireUser();
+  const { data, error } = await supabase.rpc('evaluate_user_badges', { p_user_id: user.id });
+  if (error) throw error;
+  return data;
+}
