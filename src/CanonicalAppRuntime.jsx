@@ -177,7 +177,7 @@ function CanonicalRuntime() {
   if (location.pathname === '/map') return <MapWorkspace />;
   if (location.pathname === '/capabilities') return <RouteGuard capabilities={[CAPABILITIES.ADMIN]}><WorkspaceShell><CapabilityCenterPage /></WorkspaceShell></RouteGuard>;
   if (location.pathname === '/fleet-operations') return <WorkspaceShell><FleetOperationsPage /></WorkspaceShell>;
-  if (location.pathname === '/' || location.pathname === '/discover' || location.pathname.startsWith('/place/') || location.pathname === '/profile' || location.pathname === '/check-in' || location.pathname === '/business') return <WorkspaceShell><CanonicalConsumerRuntime /></WorkspaceShell>;
+  if (location.pathname === '/' || location.pathname === '/discover' || location.pathname.startsWith('/place/') || location.pathname === '/profile' || location.pathname === '/check-in') return <WorkspaceShell><CanonicalConsumerRuntime /></WorkspaceShell>;
   return <FeatureSurface />;
 }
 
