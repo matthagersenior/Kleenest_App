@@ -8,7 +8,7 @@ function firstEntitlement(entitlements = []) {
   return Array.isArray(entitlements) && entitlements.length > 0 ? entitlements[0] : null;
 }
 
-export default function WorkspaceShell({ children }) {
+export default function WorkspaceShell({ children, workspace: workspaceOverride = null }) {
   const location = useLocation();
   const { profile, entitlements, capabilities, authenticated } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -16,9 +16,9 @@ export default function WorkspaceShell({ children }) {
   const model = useMemo(() => {
     const entitlement = firstEntitlement(entitlements);
     const membership = profile?.membership_tier || profile?.subscription_tier || entitlement?.service_tier || 'free';
-    const workspace = resolveWorkspace(location.pathname, capabilities);
+    const workspace = workspaceOverride || resolveWorkspace(location.pathname, capabilities);
     return getWorkspaceModel({ membership, workspace, businessId: profile?.business_id || null, capabilities });
-  }, [capabilities, entitlements, location.pathname, profile]);
+  }, [capabilities, entitlements, location.pathname, profile, workspaceOverride]);
 
   const navigation = WORKSPACE_NAVIGATION[model.workspace.id] || WORKSPACE_NAVIGATION.consumer;
   const membershipKnown = Object.prototype.hasOwnProperty.call(MEMBERSHIP_UI, model.membership);
