@@ -7,6 +7,7 @@ import NetworkEventToast from './NetworkEventToast';
 import NotificationRealtimeBridge from './NotificationRealtimeBridge';
 import IntelligenceNotificationEventBridge from './IntelligenceNotificationEventBridge';
 import ContributionPromptBridge from './ContributionPromptBridge';
+import MapBehaviorBridge from './MapBehaviorBridge';
 
 // Cross-cutting integrations only; application routes remain in AppRuntime.
 export default function FeatureIntegration(){
@@ -20,5 +21,6 @@ export default function FeatureIntegration(){
     <NotificationRealtimeBridge/>
     <IntelligenceNotificationEventBridge/>
     <ContributionPromptBridge/>
+    <MapBehaviorBridge/>
   </>;
 }
