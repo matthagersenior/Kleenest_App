@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { recordFavoriteRouteEvent } from './locationActivity';
 
 async function requireUser() {
   if (!supabase) throw new Error('Supabase is not configured.');
@@ -8,7 +9,7 @@ async function requireUser() {
   return user;
 }
 
-export async function addFavorite(locationId) {
+export async function addFavorite(locationId,{fromLat=null,fromLng=null}={}) {
   const user = await requireUser();
   if (!locationId) throw new Error('A location is required.');
   const { data, error } = await supabase
@@ -17,6 +18,7 @@ export async function addFavorite(locationId) {
     .select()
     .single();
   if (error) throw error;
+  await recordFavoriteRouteEvent(locationId,{latitude:fromLat,longitude:fromLng}).catch(()=>null);
   return data;
 }
 
