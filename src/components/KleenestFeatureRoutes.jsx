@@ -28,6 +28,18 @@ const businessRoute = (element) => (
   </RouteGuard>
 );
 
+const enterpriseRoute = (element) => (
+  <RouteGuard requireAuth capabilities={ENTERPRISE_CAPABILITIES}>
+    <WorkspaceShell>{element}</WorkspaceShell>
+  </RouteGuard>
+);
+
+const fleetRoute = (element) => (
+  <RouteGuard requireAuth capabilities={FLEET_CAPABILITIES}>
+    <WorkspaceShell>{element}</WorkspaceShell>
+  </RouteGuard>
+);
+
 export default function KleenestFeatureRoutes() {
   return (
     <>
@@ -45,9 +57,10 @@ export default function KleenestFeatureRoutes() {
       <Route path="/business/entitlements" element={businessRoute(<BusinessEntitlementsPage />)} />
       <Route path="/business/performance" element={businessRoute(<BusinessPerformancePage />)} />
 
-      <Route path="/fleet" element={<RouteGuard requireAuth capabilities={FLEET_CAPABILITIES}><WorkspaceShell><FleetReviewPage /></WorkspaceShell></RouteGuard>} />
+      <Route path="/fleet" element={fleetRoute(<FleetReviewPage />)} />
       <Route path="/fleet-operations" element={<Navigate to="/fleet" replace />} />
-      <Route path="/enterprise" element={<RouteGuard requireAuth capabilities={ENTERPRISE_CAPABILITIES}><WorkspaceShell><EnterpriseCommandCenterPage /></WorkspaceShell></RouteGuard>} />
+
+      <Route path="/enterprise" element={enterpriseRoute(<EnterpriseCommandCenterPage />)} />
 
       <Route path="/admin/data" element={<RouteGuard requireAuth roles={ADMIN_ROLES}><WorkspaceShell><AdminDataPage /></WorkspaceShell></RouteGuard>} />
       <Route path="/admin/crud" element={<RouteGuard requireAuth roles={ADMIN_ROLES}><WorkspaceShell><AdminCrudPage /></WorkspaceShell></RouteGuard>} />
