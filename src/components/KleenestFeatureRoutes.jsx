@@ -1,5 +1,6 @@
 import { Route } from 'react-router-dom';
 import RouteGuard from './RouteGuard';
+import WorkspaceShell from './WorkspaceShell';
 import RewardsPage from '../pages/RewardsPage';
 import GamificationActionsPage from '../pages/GamificationActionsPage';
 import ContestsPage from '../pages/ContestsPage';
@@ -26,20 +27,20 @@ export default function KleenestFeatureRoutes() {
       <Route path="/progression" element={<RouteGuard requireAuth><GamificationActionsPage /></RouteGuard>} />
       <Route path="/contests" element={<RouteGuard requireAuth><ContestsPage /></RouteGuard>} />
       <Route path="/leaderboard" element={<RouteGuard requireAuth><LeaderboardPage /></RouteGuard>} />
-      <Route path="/route" element={<RouteGuard requireAuth><RoutePlannerPage /></RouteGuard>} />
+      <Route path="/route" element={<RouteGuard requireAuth><WorkspaceShell><RoutePlannerPage /></WorkspaceShell></RouteGuard>} />
 
-      <Route path="/business/dashboard" element={<RouteGuard requireAuth roles={BUSINESS_ROLES}><BusinessDashboardPage /></RouteGuard>} />
-      <Route path="/business/intelligence" element={<RouteGuard requireAuth roles={BUSINESS_ROLES}><BusinessIntelligencePage /></RouteGuard>} />
-      <Route path="/business/manage" element={<RouteGuard requireAuth roles={BUSINESS_ROLES}><BusinessManagePage /></RouteGuard>} />
-      <Route path="/business/reviews" element={<RouteGuard requireAuth roles={BUSINESS_ROLES}><BusinessReviewsPage /></RouteGuard>} />
-      <Route path="/business/entitlements" element={<RouteGuard requireAuth roles={BUSINESS_ROLES}><BusinessEntitlementsPage /></RouteGuard>} />
-      <Route path="/business/performance" element={<RouteGuard requireAuth roles={BUSINESS_ROLES}><BusinessPerformancePage /></RouteGuard>} />
+      <Route path="/business/dashboard" element={<RouteGuard requireAuth roles={BUSINESS_ROLES}><WorkspaceShell><BusinessDashboardPage /></WorkspaceShell></RouteGuard>} />
+      <Route path="/business/intelligence" element={<RouteGuard requireAuth roles={BUSINESS_ROLES}><WorkspaceShell><BusinessIntelligencePage /></WorkspaceShell></RouteGuard>} />
+      <Route path="/business/manage" element={<RouteGuard requireAuth roles={BUSINESS_ROLES}><WorkspaceShell><BusinessManagePage /></WorkspaceShell></RouteGuard>} />
+      <Route path="/business/reviews" element={<RouteGuard requireAuth roles={BUSINESS_ROLES}><WorkspaceShell><BusinessReviewsPage /></WorkspaceShell></RouteGuard>} />
+      <Route path="/business/entitlements" element={<RouteGuard requireAuth roles={BUSINESS_ROLES}><WorkspaceShell><BusinessEntitlementsPage /></WorkspaceShell></RouteGuard>} />
+      <Route path="/business/performance" element={<RouteGuard requireAuth roles={BUSINESS_ROLES}><WorkspaceShell><BusinessPerformancePage /></WorkspaceShell></RouteGuard>} />
 
-      <Route path="/fleet" element={<RouteGuard requireAuth capabilities={['fleet']}><FleetReviewPage /></RouteGuard>} />
-      <Route path="/enterprise" element={<RouteGuard requireAuth capabilities={['enterprise']}><EnterpriseCommandCenterPage /></RouteGuard>} />
+      <Route path="/fleet" element={<RouteGuard requireAuth capabilities={['fleet']}><WorkspaceShell><FleetReviewPage /></WorkspaceShell></RouteGuard>} />
+      <Route path="/enterprise" element={<RouteGuard requireAuth capabilities={['enterprise']}><WorkspaceShell><EnterpriseCommandCenterPage /></WorkspaceShell></RouteGuard>} />
 
-      <Route path="/admin/data" element={<RouteGuard requireAuth roles={ADMIN_ROLES}><AdminDataPage /></RouteGuard>} />
-      <Route path="/admin/crud" element={<RouteGuard requireAuth roles={ADMIN_ROLES}><AdminCrudPage /></RouteGuard>} />
+      <Route path="/admin/data" element={<RouteGuard requireAuth roles={ADMIN_ROLES}><WorkspaceShell><AdminDataPage /></WorkspaceShell></RouteGuard>} />
+      <Route path="/admin/crud" element={<RouteGuard requireAuth roles={ADMIN_ROLES}><WorkspaceShell><AdminCrudPage /></WorkspaceShell></RouteGuard>} />
     </>
   );
 }
