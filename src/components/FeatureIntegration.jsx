@@ -10,21 +10,6 @@ import ContributionPromptBridge from './ContributionPromptBridge';
 import MapBehaviorBridge from './MapBehaviorBridge';
 import LocationIntelligencePanel from './LocationIntelligencePanel';
 import LocationDataPanel from './LocationDataPanel';
+import LocationContributionPanel from './LocationContributionPanel';
 
-// Cross-cutting integrations only; application routes remain in AppRuntime.
-export default function FeatureIntegration(){
-  return <>
-    <RewardNotificationBridge/>
-    <LocationActivityBridge/>
-    <LocationVerificationBridge/>
-    <PushNotificationBridge/>
-    <NetworkRealtimeBridge/>
-    <NetworkEventToast/>
-    <NotificationRealtimeBridge/>
-    <IntelligenceNotificationEventBridge/>
-    <ContributionPromptBridge/>
-    <MapBehaviorBridge/>
-    <LocationIntelligencePanel/>
-    <LocationDataPanel/>
-  </>;
-}
+export default function FeatureIntegration(){return <><RewardNotificationBridge/><LocationActivityBridge/><LocationVerificationBridge/><PushNotificationBridge/><NetworkRealtimeBridge/><NetworkEventToast/><NotificationRealtimeBridge/><IntelligenceNotificationEventBridge/><ContributionPromptBridge/><MapBehaviorBridge/><LocationIntelligencePanel/><LocationDataPanel/><LocationContributionPanel/></>}
