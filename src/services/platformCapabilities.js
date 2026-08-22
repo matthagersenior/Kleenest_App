@@ -12,10 +12,7 @@ async function call(name, args = {}) {
 
 export const consumer = {
   entitlements: () => call('get_current_user_product_entitlements'),
-  tier: async () => {
-    const user = await getCurrentUser();
-    return user ? call('get_effective_consumer_tier', { p_user_id: user.id }) : null;
-  },
+  tier: async () => { const user = await getCurrentUser(); return user ? call('get_effective_consumer_tier', { p_user_id: user.id }) : null; },
   progression: () => call('get_progression_summary'),
   gamification: () => call('gamification_dashboard'),
   leaderboard: (limit = 25) => call('get_user_leaderboard', { p_limit: limit }),
@@ -53,80 +50,57 @@ export const liveNetwork = {
   publishFleetRoute: args => call('publish_fleet_route_notification', args),
   nearbyRecipients: args => call('resolve_nearby_notification_recipients', args),
   createGeofence: args => call('create_gps_geofence_notification', args),
+  createIntelligence: args => call('create_intelligence_notification', args),
+  queueIntelligenceJobs: () => call('queue_intelligence_notification_jobs'),
+  processIntelligenceJobs: (limit = 25) => call('process_intelligence_notification_jobs', { p_limit: limit }),
+  queuePushDelivery: notificationId => call('queue_push_deliveries_for_notification', { p_notification_id: notificationId }),
+  queueDelivery: args => call('queue_notification_delivery', args),
   notifications: limit => call('user_notifications', { p_limit: limit ?? 50 }),
   markRead: id => call('mark_notification_read', { p_notification_id: id })
 };
 
 export const gamification = {
-  dashboard: () => call('gamification_dashboard'),
-  progression: () => call('get_progression_summary'),
-  leaderboard: (limit = 25) => call('get_user_leaderboard', { p_limit: limit }),
-  recordActivity: args => call('record_gamification_activity', args),
-  recordResult: args => call('record_game_result', args),
-  completeChallenge: id => call('complete_progression_challenge', { p_challenge_id: id }),
-  joinContest: id => call('join_contest', { p_contest_id: id }),
-  submitContestEntry: args => call('submit_contest_entry', args),
-  evaluateBadges: userId => call('evaluate_user_badges', { p_user_id: userId })
+  dashboard: () => call('gamification_dashboard'), progression: () => call('get_progression_summary'), leaderboard: (limit = 25) => call('get_user_leaderboard', { p_limit: limit }),
+  recordActivity: args => call('record_gamification_activity', args), recordResult: args => call('record_game_result', args),
+  completeChallenge: id => call('complete_progression_challenge', { p_challenge_id: id }), joinContest: id => call('join_contest', { p_contest_id: id }),
+  submitContestEntry: args => call('submit_contest_entry', args), evaluateBadges: userId => call('evaluate_user_badges', { p_user_id: userId })
 };
 
 export const qr = {
-  redeem: code => call('redeem_qr_code', { p_code: code }),
-  verifyCheckin: args => call('verify_checkin', args),
-  consumeSingleUse: (code, userId) => call('consume_single_use_qr', { p_code: code, p_user_id: userId }),
-  recordAttribution: args => call('record_qr_attribution', args),
-  resolveAction: code => call('resolve_custom_qr_action', { p_qr_code: code })
+  redeem: code => call('redeem_qr_code', { p_code: code }), verifyCheckin: args => call('verify_checkin', args), consumeSingleUse: (code, userId) => call('consume_single_use_qr', { p_code: code, p_user_id: userId }),
+  recordAttribution: args => call('record_qr_attribution', args), resolveAction: code => call('resolve_custom_qr_action', { p_qr_code: code })
 };
 
 export const enterprise = {
-  network: args => call('get_enterprise_partner_network', args),
-  memberships: () => call('list_my_partner_memberships'),
-  programs: () => call('list_my_demo_programs'),
-  enableFleetService: userId => call('enable_enterprise_fleet_service', { p_user_id: userId }),
-  partnerAnalytics: args => call('get_partner_network_benchmark', args),
-  campaignRoi: args => call('get_partner_campaign_roi', args),
-  allocationRoi: args => call('get_partner_allocation_roi', args),
-  createNetwork: args => call('create_enterprise_partner_network', args),
-  createCampaign: args => call('create_enterprise_partner_campaign', args),
-  recordMetric: args => call('record_enterprise_partner_metric', args),
-  recordOutcome: args => call('record_enterprise_partner_campaign_outcome', args)
+  network: args => call('get_enterprise_partner_network', args), memberships: () => call('list_my_partner_memberships'), programs: () => call('list_my_demo_programs'),
+  enableFleetService: userId => call('enable_enterprise_fleet_service', { p_user_id: userId }), partnerAnalytics: args => call('get_partner_network_benchmark', args),
+  campaignRoi: args => call('get_partner_campaign_roi', args), allocationRoi: args => call('get_partner_allocation_roi', args), createNetwork: args => call('create_enterprise_partner_network', args),
+  createCampaign: args => call('create_enterprise_partner_campaign', args), recordMetric: args => call('record_enterprise_partner_metric', args), recordOutcome: args => call('record_enterprise_partner_campaign_outcome', args)
 };
 
 export const fleet = {
-  dashboard: businessId => call('fleet_dashboard_summary_v2', { p_business_id: businessId }),
-  opportunities: businessId => call('fleet_service_opportunities_for_business', { p_business_id: businessId }),
-  setVehicleStatus: args => call('fleet_set_vehicle_status', args),
-  setDriverStatus: args => call('fleet_set_driver_status', args),
-  setRouteStatus: args => call('fleet_set_route_status', args),
-  completeMaintenance: args => call('fleet_complete_maintenance', args),
-  resolveAlert: args => call('fleet_resolve_alert', args),
-  hasAccess: businessId => call('has_fleet_access', { p_business_id: businessId })
+  dashboard: businessId => call('fleet_dashboard_summary_v2', { p_business_id: businessId }), opportunities: businessId => call('fleet_service_opportunities_for_business', { p_business_id: businessId }),
+  setVehicleStatus: args => call('fleet_set_vehicle_status', args), setDriverStatus: args => call('fleet_set_driver_status', args), setRouteStatus: args => call('fleet_set_route_status', args),
+  completeMaintenance: args => call('fleet_complete_maintenance', args), resolveAlert: args => call('fleet_resolve_alert', args), hasAccess: businessId => call('has_fleet_access', { p_business_id: businessId })
 };
 
 export const business = {
-  productAccess: businessId => call('get_business_product_access', { p_business_id: businessId }),
-  managementContext: businessId => call('business_management_context', { p_business_id: businessId }),
+  productAccess: businessId => call('get_business_product_access', { p_business_id: businessId }), managementContext: businessId => call('business_management_context', { p_business_id: businessId }),
   dashboard: (businessId, start, end) => call('business_dashboard_secure_summary', { p_business_id: businessId, p_start: start, p_end: end }),
   engagement: (businessId, start, end) => call('business_engagement_analytics', { p_business_id: businessId, p_start: start, p_end: end }),
   roi: (businessId, start, end) => call('business_roi_analytics', { p_business_id: businessId, p_start: start, p_end: end }),
-  occupancy: (businessId, start, end) => call('business_occupancy_analytics', { p_business_id: businessId, p_start: start, p_end: end }),
-  preferred: () => call('business_preferred_location_summary'),
+  occupancy: (businessId, start, end) => call('business_occupancy_analytics', { p_business_id: businessId, p_start: start, p_end: end }), preferred: () => call('business_preferred_location_summary'),
   partner: (businessId, start, end) => call('business_partner_analytics', { p_business_id: businessId, p_start: start, p_end: end })
 };
 
-export const admin = {
-  overview: () => call('admin_get_overview'),
-  integrity: () => call('admin_data_integrity_summary'),
-  reports: () => call('admin_list_reports'),
-  pendingBusinesses: () => call('admin_list_pending_businesses'),
-  users: query => call('admin_user_search', { p_query: query })
-};
+export const admin = { overview: () => call('admin_get_overview'), integrity: () => call('admin_data_integrity_summary'), reports: () => call('admin_list_reports'), pendingBusinesses: () => call('admin_list_pending_businesses'), users: query => call('admin_user_search', { p_query: query }) };
 
 export const capabilityContracts = {
   maps: ['map_network_nearby_v1', 'get_location_details', 'kleenest_location_confidence'],
   evidence: ['record_location_observation', 'submit_amenity_observation', 'submit_restroom_observation', 'submit_location_quality_observation', 'submit_location_photo_record'],
   checkin: ['record_gps_checkin', 'kleenest_map_check_in', 'create_check_in', 'verify_checkin'],
   routing: ['create_route_plan', 'prepare_route_discovery', 'complete_route', 'record_location_route_event', 'record_favorite_route_event'],
-  notifications: ['user_notifications', 'mark_notification_read', 'create_gps_geofence_notification', 'publish_intelligence_location_event'],
+  notifications: ['user_notifications', 'mark_notification_read', 'create_gps_geofence_notification', 'publish_location_notification', 'publish_fleet_route_notification', 'create_intelligence_notification', 'queue_intelligence_notification_jobs', 'process_intelligence_notification_jobs', 'queue_notification_delivery', 'queue_push_deliveries_for_notification', 'register_notification_push_subscription', 'remove_notification_push_subscription'],
   gamification: ['gamification_dashboard', 'get_progression_summary', 'get_user_leaderboard', 'evaluate_user_badges', 'complete_progression_challenge'],
   business: ['business_dashboard_secure_summary', 'business_engagement_analytics', 'business_roi_analytics', 'business_occupancy_analytics'],
   enterprise: ['get_enterprise_partner_network', 'get_partner_network_benchmark', 'get_partner_campaign_roi', 'get_partner_allocation_roi'],
