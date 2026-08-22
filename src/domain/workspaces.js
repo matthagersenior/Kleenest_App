@@ -26,10 +26,17 @@ export const WORKSPACE_NAVIGATION = Object.freeze({
   ]),
   fleet: Object.freeze([
     { id: 'operations', label: 'Operations', path: '/fleet' },
-    { id: 'routes', label: 'Routes', path: '/route' },
+    { id: 'routes', label: 'Routes', path: '/route', workspace: 'fleet' },
+    { id: 'performance', label: 'Performance', path: '/fleet/performance' },
+    { id: 'opportunities', label: 'Opportunities', path: '/fleet/opportunities' },
+    { id: 'goals', label: 'Goals', path: '/fleet/goals' },
   ]),
   enterprise: Object.freeze([
     { id: 'command', label: 'Command', path: '/enterprise' },
+    { id: 'partners', label: 'Partners', path: '/enterprise/partners' },
+    { id: 'campaigns', label: 'Campaigns', path: '/enterprise/campaigns' },
+    { id: 'performance', label: 'Performance', path: '/enterprise/performance' },
+    { id: 'fleet', label: 'Fleet', path: '/enterprise/fleet' },
   ]),
   admin: Object.freeze([
     { id: 'data', label: 'Data', path: '/admin/data' },
