@@ -22,32 +22,40 @@ const ADMIN_ROLES = ['admin'];
 const FLEET_CAPABILITIES = ['fleet'];
 const ENTERPRISE_CAPABILITIES = ['enterprise'];
 
+const consumerRoute = (element) => (
+  <RouteGuard requireAuth>
+    <WorkspaceShell workspace="consumer">{element}</WorkspaceShell>
+  </RouteGuard>
+);
 const businessRoute = (element) => (
   <RouteGuard requireAuth roles={BUSINESS_ROLES}>
-    <WorkspaceShell>{element}</WorkspaceShell>
+    <WorkspaceShell workspace="business">{element}</WorkspaceShell>
   </RouteGuard>
 );
-
-const enterpriseRoute = (element) => (
-  <RouteGuard requireAuth capabilities={ENTERPRISE_CAPABILITIES}>
-    <WorkspaceShell>{element}</WorkspaceShell>
-  </RouteGuard>
-);
-
 const fleetRoute = (element) => (
   <RouteGuard requireAuth capabilities={FLEET_CAPABILITIES}>
-    <WorkspaceShell>{element}</WorkspaceShell>
+    <WorkspaceShell workspace="fleet">{element}</WorkspaceShell>
+  </RouteGuard>
+);
+const enterpriseRoute = (element) => (
+  <RouteGuard requireAuth capabilities={ENTERPRISE_CAPABILITIES}>
+    <WorkspaceShell workspace="enterprise">{element}</WorkspaceShell>
+  </RouteGuard>
+);
+const adminRoute = (element) => (
+  <RouteGuard requireAuth roles={ADMIN_ROLES}>
+    <WorkspaceShell workspace="admin">{element}</WorkspaceShell>
   </RouteGuard>
 );
 
 export default function KleenestFeatureRoutes() {
   return (
     <>
-      <Route path="/rewards" element={<RouteGuard requireAuth><RewardsPage /></RouteGuard>} />
-      <Route path="/progression" element={<RouteGuard requireAuth><GamificationActionsPage /></RouteGuard>} />
-      <Route path="/contests" element={<RouteGuard requireAuth><ContestsPage /></RouteGuard>} />
-      <Route path="/leaderboard" element={<RouteGuard requireAuth><LeaderboardPage /></RouteGuard>} />
-      <Route path="/route" element={<RouteGuard requireAuth><WorkspaceShell><RoutePlannerPage /></WorkspaceShell></RouteGuard>} />
+      <Route path="/rewards" element={consumerRoute(<RewardsPage />)} />
+      <Route path="/progression" element={consumerRoute(<GamificationActionsPage />)} />
+      <Route path="/contests" element={consumerRoute(<ContestsPage />)} />
+      <Route path="/leaderboard" element={consumerRoute(<LeaderboardPage />)} />
+      <Route path="/route" element={consumerRoute(<RoutePlannerPage />)} />
 
       <Route path="/business" element={businessRoute(<BusinessDashboardPage />)} />
       <Route path="/business/dashboard" element={<Navigate to="/business" replace />} />
@@ -59,11 +67,15 @@ export default function KleenestFeatureRoutes() {
 
       <Route path="/fleet" element={fleetRoute(<FleetReviewPage />)} />
       <Route path="/fleet-operations" element={<Navigate to="/fleet" replace />} />
+      <Route path="/fleet/routes" element={fleetRoute(<RoutePlannerPage />)} />
+      <Route path="/fleet/performance" element={fleetRoute(<FleetReviewPage />)} />
+      <Route path="/fleet/opportunities" element={fleetRoute(<FleetReviewPage />)} />
+      <Route path="/fleet/goals" element={fleetRoute(<FleetReviewPage />)} />
 
       <Route path="/enterprise" element={enterpriseRoute(<EnterpriseCommandCenterPage />)} />
 
-      <Route path="/admin/data" element={<RouteGuard requireAuth roles={ADMIN_ROLES}><WorkspaceShell><AdminDataPage /></WorkspaceShell></RouteGuard>} />
-      <Route path="/admin/crud" element={<RouteGuard requireAuth roles={ADMIN_ROLES}><WorkspaceShell><AdminCrudPage /></WorkspaceShell></RouteGuard>} />
+      <Route path="/admin/data" element={adminRoute(<AdminDataPage />)} />
+      <Route path="/admin/crud" element={adminRoute(<AdminCrudPage />)} />
     </>
   );
 }
