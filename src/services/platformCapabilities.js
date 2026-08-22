@@ -32,7 +32,14 @@ export const evidence = {
   photo: args => call('submit_location_photo_record', args),
   qualityObservation: args => call('submit_location_quality_observation', args),
   restroomObservation: args => call('submit_restroom_observation', args),
-  refreshFeatureSummary: locationId => call('refresh_location_feature_summary', { p_location_id: locationId })
+  refreshFeatureSummary: locationId => call('refresh_location_feature_summary', { p_location_id: locationId }),
+  recordVerification: args => call('record_location_verification', args),
+  submitVerification: args => call('submit_location_verification', args),
+  refreshVerificationSummary: () => call('refresh_location_verification_summary'),
+  reviewAmenityFeedback: args => call('record_review_amenity_feedback', args),
+  refreshRating: () => call('refresh_location_rating'),
+  refreshReputation: userId => call('refresh_contributor_reputation', { p_user_id: userId }),
+  refreshMilestones: userId => call('refresh_contributor_milestones', { p_user_id: userId })
 };
 
 export const routing = {
@@ -97,8 +104,10 @@ export const admin = { overview: () => call('admin_get_overview'), integrity: ()
 
 export const capabilityContracts = {
   maps: ['map_network_nearby_v1', 'get_location_details', 'kleenest_location_confidence'],
-  evidence: ['record_location_observation', 'submit_amenity_observation', 'submit_restroom_observation', 'submit_location_quality_observation', 'submit_location_photo_record'],
-  checkin: ['record_gps_checkin', 'kleenest_map_check_in', 'create_check_in', 'verify_checkin'],
+  evidence: ['record_location_observation', 'submit_amenity_observation', 'submit_restroom_observation', 'submit_location_quality_observation', 'submit_location_photo_record', 'record_location_verification', 'submit_location_verification', 'record_review_amenity_feedback', 'refresh_location_rating', 'refresh_contributor_reputation', 'refresh_contributor_milestones'],
+  community: ['submit_location_photo_record', 'submit_location_quality_observation', 'submit_amenity_observation', 'submit_restroom_observation', 'record_location_observation', 'record_location_verification', 'record_review_amenity_feedback', 'refresh_location_rating', 'refresh_contributor_reputation', 'refresh_contributor_milestones'],
+  checkin: ['record_gps_checkin', 'kleenest_map_check_in', 'create_check_in', 'verify_checkin', 'process_check_in'],
+  engagement: ['record_gps_checkin', 'kleenest_map_check_in', 'create_check_in', 'verify_checkin', 'process_check_in'],
   routing: ['create_route_plan', 'prepare_route_discovery', 'complete_route', 'record_location_route_event', 'record_favorite_route_event'],
   notifications: ['user_notifications', 'mark_notification_read', 'create_gps_geofence_notification', 'publish_location_notification', 'publish_fleet_route_notification', 'create_intelligence_notification', 'queue_intelligence_notification_jobs', 'process_intelligence_notification_jobs', 'queue_notification_delivery', 'queue_push_deliveries_for_notification', 'register_notification_push_subscription', 'remove_notification_push_subscription'],
   gamification: ['gamification_dashboard', 'get_progression_summary', 'get_user_leaderboard', 'evaluate_user_badges', 'complete_progression_challenge'],
