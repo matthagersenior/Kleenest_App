@@ -17,6 +17,7 @@ export const consumer = {
   gamification: () => call('gamification_dashboard'),
   leaderboard: (limit = 25) => call('get_user_leaderboard', { p_limit: limit }),
   favorites: () => call('my_favorite_locations'),
+  toggleFavorite: locationId => call('kleenest_toggle_favorite', { p_location_id: locationId }),
   notifications: (limit = 50) => call('user_notifications', { p_limit: limit }),
   nearby: args => call('nearby_locations_enriched', args),
   location: locationId => call('get_location_details', { p_location_id: locationId }),
