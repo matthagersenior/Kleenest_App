@@ -2,7 +2,6 @@ import { useLocation } from 'react-router-dom';
 import { Routes, Route } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import MapSurface from './components/MapSurface.jsx';
-import RoutePlannerPage from './pages/RoutePlannerPage.jsx';
 import CapabilityCenterPage from './pages/CapabilityCenterPage.jsx';
 import FleetOperationsPage from './pages/FleetOperationsPage.jsx';
 import GamesPage from './pages/GamesPage.jsx';
@@ -176,11 +175,10 @@ function FeatureSurface() {
 function CanonicalRuntime() {
   const location = useLocation();
   if (location.pathname === '/map') return <MapWorkspace />;
-  if (location.pathname === '/route') return <WorkspaceShell><RoutePlannerPage /></WorkspaceShell>;
   if (location.pathname === '/capabilities') return <RouteGuard capabilities={[CAPABILITIES.ADMIN]}><WorkspaceShell><CapabilityCenterPage /></WorkspaceShell></RouteGuard>;
   if (location.pathname === '/fleet-operations') return <WorkspaceShell><FleetOperationsPage /></WorkspaceShell>;
   if (location.pathname === '/' || location.pathname === '/discover' || location.pathname.startsWith('/place/') || location.pathname === '/profile' || location.pathname === '/check-in' || location.pathname === '/business') return <WorkspaceShell><CanonicalConsumerRuntime /></WorkspaceShell>;
-  return <WorkspaceShell><FeatureSurface /></WorkspaceShell>;
+  return <FeatureSurface />;
 }
 
 export default CanonicalRuntime;
