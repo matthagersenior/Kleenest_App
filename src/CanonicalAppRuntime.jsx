@@ -17,6 +17,7 @@ import { createOfflinePack, getCachedLocations, getCachedPacks } from './service
 import { useAuth } from './context/AuthContext.jsx';
 import CanonicalConsumerRuntime from './CanonicalConsumerRuntime.jsx';
 import WorkspaceShell from './components/WorkspaceShell.jsx';
+import { CAPABILITIES } from './domain/capabilities.js';
 
 const NETWORK_FALLBACK = { latitude: 38.627, longitude: -90.199 };
 
@@ -176,7 +177,7 @@ function CanonicalRuntime() {
   const location = useLocation();
   if (location.pathname === '/map') return <MapWorkspace />;
   if (location.pathname === '/route') return <WorkspaceShell><RoutePlannerPage /></WorkspaceShell>;
-  if (location.pathname === '/capabilities') return <CapabilityCenterPage />;
+  if (location.pathname === '/capabilities') return <RouteGuard capabilities={[CAPABILITIES.ADMIN]}><WorkspaceShell><CapabilityCenterPage /></WorkspaceShell></RouteGuard>;
   if (location.pathname === '/fleet-operations') return <WorkspaceShell><FleetOperationsPage /></WorkspaceShell>;
   if (location.pathname === '/' || location.pathname === '/discover' || location.pathname.startsWith('/place/') || location.pathname === '/profile' || location.pathname === '/check-in' || location.pathname === '/business') return <WorkspaceShell><CanonicalConsumerRuntime /></WorkspaceShell>;
   return <WorkspaceShell><FeatureSurface /></WorkspaceShell>;
