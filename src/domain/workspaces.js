@@ -10,7 +10,6 @@ export const WORKSPACES = Object.freeze({
   admin: Object.freeze({ id: 'admin', label: 'Admin', shortLabel: 'Admin' }),
 });
 
-// Only destinations already verified in the current runtime are exposed.
 export const WORKSPACE_NAVIGATION = Object.freeze({
   consumer: Object.freeze([
     { id: 'explore', label: 'Explore', path: '/map' },
@@ -94,8 +93,18 @@ export function resolveWorkspace(pathname = '/', capabilities = []) {
   return canUseWorkspace(capabilities, candidate) ? candidate : 'consumer';
 }
 
+export function resolveMembership(rawMembership, capabilities = []) {
+  const parsed = normalizeMembership({ tier: rawMembership });
+  if (parsed !== 'free') return parsed;
+  if (hasCapability(capabilities, CAPABILITIES.ADMIN)) return 'admin';
+  if (hasCapability(capabilities, CAPABILITIES.FLEET)) return 'fleet';
+  if (hasCapability(capabilities, CAPABILITIES.ENTERPRISE)) return 'enterprise';
+  if (hasCapability(capabilities, CAPABILITIES.BUSINESS)) return 'business_standard';
+  return parsed;
+}
+
 export function getWorkspaceModel({ membership = 'free', workspace, businessId = null, capabilities = [] } = {}) {
-  const resolvedMembership = normalizeMembership({ tier: membership });
+  const resolvedMembership = resolveMembership(membership, capabilities);
   const requestedWorkspace = workspace || getWorkspaceForMembership(resolvedMembership);
   const resolvedWorkspace = canUseWorkspace(capabilities, requestedWorkspace) ? requestedWorkspace : 'consumer';
   return Object.freeze({
