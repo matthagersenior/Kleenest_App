@@ -10,6 +10,7 @@ import ContributionPromptBridge from './ContributionPromptBridge';
 import MapBehaviorBridge from './MapBehaviorBridge';
 import LocationIntelligencePanel from './LocationIntelligencePanel';
 import LocationDataPanel from './LocationDataPanel';
+import LocationEvidencePanel from './LocationEvidencePanel';
 import LocationContributionPanel from './LocationContributionPanel';
 
-export default function FeatureIntegration(){return <><RewardNotificationBridge/><LocationActivityBridge/><LocationVerificationBridge/><PushNotificationBridge/><NetworkRealtimeBridge/><NetworkEventToast/><NotificationRealtimeBridge/><IntelligenceNotificationEventBridge/><ContributionPromptBridge/><MapBehaviorBridge/><LocationIntelligencePanel/><LocationDataPanel/><LocationContributionPanel/></>}
+export default function FeatureIntegration(){return <><RewardNotificationBridge/><LocationActivityBridge/><LocationVerificationBridge/><PushNotificationBridge/><NetworkRealtimeBridge/><NetworkEventToast/><NotificationRealtimeBridge/><IntelligenceNotificationEventBridge/><ContributionPromptBridge/><MapBehaviorBridge/><LocationIntelligencePanel/><LocationDataPanel/><LocationEvidencePanel/><LocationContributionPanel/></>}
