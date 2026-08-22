@@ -1,4 +1,5 @@
 import { CAPABILITIES, hasCapability } from './capabilities.js';
+import { ROUTES } from './routes.js';
 
 export const WORKSPACE_ORDER = Object.freeze(['consumer', 'business', 'fleet', 'enterprise', 'admin']);
 export const WORKSPACES = Object.freeze({
@@ -10,27 +11,23 @@ export const WORKSPACES = Object.freeze({
 });
 export const WORKSPACE_NAVIGATION = Object.freeze({
   consumer: Object.freeze([
-    { id: 'explore', label: 'Explore', path: '/map' }, { id: 'routes', label: 'Routes', path: '/route' },
-    { id: 'activity', label: 'Activity', path: '/profile' }, { id: 'play', label: 'Play', path: '/games' },
-    { id: 'community', label: 'Community', path: '/social' },
+    { id: 'explore', label: 'Explore', path: ROUTES.MAP }, { id: 'routes', label: 'Routes', path: ROUTES.ROUTE },
+    { id: 'activity', label: 'Activity', path: ROUTES.PROFILE }, { id: 'play', label: 'Play', path: ROUTES.GAMES },
+    { id: 'community', label: 'Community', path: ROUTES.SOCIAL },
   ]),
   business: Object.freeze([
-    { id: 'overview', label: 'Overview', path: '/business' }, { id: 'intelligence', label: 'Intelligence', path: '/business/intelligence' },
-    { id: 'engage', label: 'Engage', path: '/business/manage' }, { id: 'analytics', label: 'Analytics', path: '/business/performance' },
+    { id: 'overview', label: 'Overview', path: ROUTES.BUSINESS }, { id: 'intelligence', label: 'Intelligence', path: ROUTES.BUSINESS_INTELLIGENCE },
+    { id: 'engage', label: 'Engage', path: ROUTES.BUSINESS_MANAGE }, { id: 'analytics', label: 'Analytics', path: ROUTES.BUSINESS_PERFORMANCE },
   ]),
   fleet: Object.freeze([
-    { id: 'operations', label: 'Operations', path: '/fleet' }, { id: 'routes', label: 'Routes', path: '/fleet/routes' },
-    { id: 'performance', label: 'Performance', path: '/fleet/performance' }, { id: 'opportunities', label: 'Opportunities', path: '/fleet/opportunities' },
-    { id: 'goals', label: 'Goals', path: '/fleet/goals' },
+    { id: 'operations', label: 'Operations', path: ROUTES.FLEET }, { id: 'routes', label: 'Routes', path: ROUTES.FLEET_ROUTES },
+    { id: 'performance', label: 'Performance', path: ROUTES.FLEET_PERFORMANCE }, { id: 'opportunities', label: 'Opportunities', path: ROUTES.FLEET_OPPORTUNITIES },
+    { id: 'goals', label: 'Goals', path: ROUTES.FLEET_GOALS },
   ]),
-  enterprise: Object.freeze([
-    { id: 'command', label: 'Command', path: '/enterprise' }, { id: 'partners', label: 'Partners', path: '/enterprise/partners' },
-    { id: 'campaigns', label: 'Campaigns', path: '/enterprise/campaigns' }, { id: 'performance', label: 'Performance', path: '/enterprise/performance' },
-    { id: 'fleet', label: 'Fleet', path: '/enterprise/fleet' },
-  ]),
+  enterprise: Object.freeze([{ id: 'command', label: 'Command', path: ROUTES.ENTERPRISE }]),
   admin: Object.freeze([
-    { id: 'data', label: 'Data', path: '/admin/data' }, { id: 'crud', label: 'Control Room', path: '/admin/crud' },
-    { id: 'capabilities', label: 'Capabilities', path: '/capabilities' },
+    { id: 'data', label: 'Data', path: ROUTES.ADMIN_DATA }, { id: 'crud', label: 'Control Room', path: ROUTES.ADMIN_CRUD },
+    { id: 'capabilities', label: 'Capabilities', path: ROUTES.CAPABILITIES },
   ]),
 });
 const CAPABILITY_FOR_WORKSPACE = Object.freeze({ business: CAPABILITIES.BUSINESS, fleet: CAPABILITIES.FLEET, enterprise: CAPABILITIES.ENTERPRISE, admin: CAPABILITIES.ADMIN });
@@ -39,7 +36,7 @@ export function canUseWorkspace(capabilities = [], workspace = 'consumer') {
   const required = CAPABILITY_FOR_WORKSPACE[workspace];
   return Boolean(required && hasCapability(capabilities, required));
 }
-export function getAvailableWorkspaces(capabilities = []) { return WORKSPACE_ORDER.filter((workspace) => canUseWorkspace(capabilities, workspace)); }
+export function getAvailableWorkspaces(capabilities = []) { return WORKSPACE_ORDER.filter(workspace => canUseWorkspace(capabilities, workspace)); }
 export function normalizeMembership(raw = {}) {
   const source = raw?.data || raw?.entitlement || raw?.entitlements || raw;
   const tier = String(source?.membership_tier || source?.product_tier || source?.tier || source?.service_tier || source?.plan || 'free').toLowerCase().replace(/[-\s]/g, '_');
