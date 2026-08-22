@@ -32,5 +32,5 @@ export default function KleenestFeatureRoutes(){return <>
  <Route path="/business/entitlements" element={<RouteGuard requireAuth roles={businessRoles}><BusinessEntitlementsPage/></RouteGuard>}/>
  <Route path="/business/performance" element={<RouteGuard requireAuth roles={businessRoles}><BusinessPerformancePage/></RouteGuard>}/>
  <Route path="/admin/data" element={<RouteGuard requireAuth roles={adminRoles}><AdminDataPage/></RouteGuard>}/>
- <Route path="/admin/crud" element={<RouteGuard requireAuth roles={adminRoles}><AdminCrudPage/></RouteGuard>/>
+ <Route path="/admin/crud" element={<RouteGuard requireAuth roles={adminRoles}><AdminCrudPage/></RouteGuard>}/>
 </>}
