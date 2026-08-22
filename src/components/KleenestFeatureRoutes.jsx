@@ -1,6 +1,7 @@
 import {Route} from 'react-router-dom';
 import RouteGuard from './RouteGuard';
 import RewardsPage from '../pages/RewardsPage';
+import GamificationActionsPage from '../pages/GamificationActionsPage';
 import ContestsPage from '../pages/ContestsPage';
 import LeaderboardPage from '../pages/LeaderboardPage';
 import RoutePlannerPage from '../pages/RoutePlannerPage';
@@ -20,6 +21,7 @@ const adminRoles=['admin'];
 
 export default function KleenestFeatureRoutes(){return <>
  <Route path="/rewards" element={<RouteGuard requireAuth><RewardsPage/></RouteGuard>}/>
+ <Route path="/progression" element={<RouteGuard requireAuth><GamificationActionsPage/></RouteGuard>}/>
  <Route path="/contests" element={<RouteGuard requireAuth><ContestsPage/></RouteGuard>}/>
  <Route path="/leaderboard" element={<RouteGuard requireAuth><LeaderboardPage/></RouteGuard>}/>
  <Route path="/route" element={<RouteGuard requireAuth><RoutePlannerPage/></RouteGuard>}/>
