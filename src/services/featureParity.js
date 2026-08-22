@@ -16,13 +16,16 @@ export const consumerParity = {
   amenities: 'existing',
   bathroomVerification: 'existing',
   routes: 'existing',
+  locationEvidence: 'existing',
+  locationObservations: 'existing',
+  locationPhotos: 'existing',
 };
 
 export const gamificationParity = {
   progression: 'existing-foundation',
   rewardHistory: 'existing',
-  badges: 'next',
-  challenges: 'next',
+  badges: 'existing',
+  challenges: 'existing',
   leaderboards: 'existing',
 };
 
@@ -37,7 +40,7 @@ export const businessParity = {
   contests: 'existing',
   events: 'existing',
   engagementAttribution: 'existing-foundation',
-  roi: 'next',
+  roi: 'existing',
 };
 
 export const platformParity = {
@@ -45,6 +48,6 @@ export const platformParity = {
   routeAuthorization: 'existing',
   entitlements: 'existing',
   admin: 'existing-foundation',
-  enterprise: 'next',
-  commerce: 'next',
+  enterprise: 'backend-capability-canonical-ui-pending',
+  commerce: 'stripe-boundary-pending',
 };
