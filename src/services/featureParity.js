@@ -15,7 +15,7 @@ export const consumerParity = {
   following: 'existing',
   amenities: 'existing',
   bathroomVerification: 'existing',
-  routes: 'service-wired',
+  routes: 'existing',
 };
 
 export const gamificationParity = {
