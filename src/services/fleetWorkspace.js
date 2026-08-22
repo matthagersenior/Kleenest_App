@@ -1,5 +1,6 @@
 import { getFleetMetricConfiguration } from './fleetMetricConfig.js';
-import { buildFleetRecommendations, getLocationSignals } from './intelligence.js';
+import { getLocationSignals } from './intelligence.js';
+import { buildFleetRecommendations, buildFleetNotificationCandidates } from './intelligenceRecommendations.js';
 import { listPlaces } from './places.js';
 import { subscribeToLiveEvents } from './liveNetwork.js';
 
@@ -12,13 +13,7 @@ const asArray = value => {
   return Object.values(value).filter(value => value && typeof value === 'object' && !Array.isArray(value));
 };
 
-export const FLEET_WORKSPACE_SECTIONS = Object.freeze([
-  'operations',
-  'routes',
-  'performance',
-  'opportunities',
-  'goals',
-]);
+export const FLEET_WORKSPACE_SECTIONS = Object.freeze(['operations', 'routes', 'performance', 'opportunities', 'goals']);
 
 export async function loadFleetNetwork({ limit = 60 } = {}) {
   const placeResult = await listPlaces({ category: 'restroom', sort: 'recommended', limit });
@@ -44,16 +39,14 @@ export async function loadFleetNetwork({ limit = 60 } = {}) {
       };
     }
   }));
-  const signals = enriched.map(row => ({
-    location_id: row.location_id || row.id,
-    name: row.name,
-    ...(row.signals || {}),
-  }));
+  const signals = enriched.map(row => ({ location_id: row.location_id || row.id, name: row.name, ...(row.signals || {}) }));
+  const recommendations = asArray(buildFleetRecommendations(signals));
   return Object.freeze({
     places: enriched,
     signals,
     live: enriched.flatMap(row => asArray(row.liveEvents)),
-    recommendations: asArray(buildFleetRecommendations(signals)),
+    recommendations,
+    notifications: buildFleetNotificationCandidates(recommendations),
   });
 }
 
@@ -86,8 +79,6 @@ export function classifyFleetNetwork(network) {
   return Object.freeze({
     attention: signals.filter(row => row.operational_status === 'attention' || row.operational_status === 'stale'),
     active: signals.filter(row => Number(row.activity_score || 0) >= 40 || Number(row.recent_event_count || 0) > 0),
-    averageQuality: signals.length
-      ? Math.round(signals.reduce((sum, row) => sum + Number(row.quality_score || 0), 0) / signals.length)
-      : 0,
+    averageQuality: signals.length ? Math.round(signals.reduce((sum, row) => sum + Number(row.quality_score || 0), 0) / signals.length) : 0,
   });
 }
