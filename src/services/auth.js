@@ -39,6 +39,12 @@ export async function sendPasswordReset(email) {
   return client.auth.resetPasswordForEmail(email, { redirectTo: appUrl('/profile') });
 }
 
+export async function updatePassword(password) {
+  const client = requireClient();
+  if (!password || password.length < 8) throw new Error('Password must be at least 8 characters.');
+  return client.auth.updateUser({ password });
+}
+
 export async function updateUserMetadata(data) {
   const client = requireClient();
   return client.auth.updateUser({ data });
