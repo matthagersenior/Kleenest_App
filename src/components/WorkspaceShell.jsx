@@ -8,6 +8,10 @@ function firstEntitlement(entitlements = []) {
   return Array.isArray(entitlements) && entitlements.length > 0 ? entitlements[0] : null;
 }
 
+function isActive(location, item) {
+  return location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
+}
+
 export default function WorkspaceShell({ children, workspace: workspaceOverride = null }) {
   const location = useLocation();
   const { profile, entitlements, capabilities, authenticated } = useAuth();
@@ -29,7 +33,13 @@ export default function WorkspaceShell({ children, workspace: workspaceOverride 
         <Link className="brand" to="/" onClick={() => setMenuOpen(false)} aria-label="Kleenest home">Kleenest</Link>
         <nav className={`nav workspace-nav ${menuOpen ? 'open' : ''}`} aria-label={`${model.workspace.label} navigation`}>
           {navigation.map((item) => (
-            <Link key={item.id} className={location.pathname === item.path || location.pathname.startsWith(`${item.path}/`) ? 'active' : ''} to={item.path} onClick={() => setMenuOpen(false)}>
+            <Link
+              key={item.id}
+              className={item.workspace === model.workspace.id && isActive(location, item) ? 'active' : ''}
+              to={item.path}
+              state={item.workspace ? { workspace: item.workspace } : undefined}
+              onClick={() => setMenuOpen(false)}
+            >
               {item.label}
             </Link>
           ))}
