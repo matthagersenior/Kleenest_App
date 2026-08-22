@@ -126,3 +126,8 @@ export function getWorkspaceModel({ membership = 'free', workspace, businessId =
     availableWorkspaces: getAvailableWorkspaces(capabilities),
   });
 }
+
+export function getNavigationForWorkspace(workspace, capabilities = []) {
+  if (!canUseWorkspace(capabilities, workspace)) return [];
+  return WORKSPACE_NAVIGATION[workspace] || [];
+}
