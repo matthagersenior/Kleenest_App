@@ -10,12 +10,12 @@ export const consumerParity = {
   categories: 'existing',
   checkIns: 'existing',
   rewards: 'existing',
-  favorites: 'service-added',
-  notifications: 'service-added',
-  following: 'service-added',
-  amenities: 'next',
-  bathroomVerification: 'next',
-  routes: 'next',
+  favorites: 'existing',
+  notifications: 'existing',
+  following: 'existing',
+  amenities: 'existing',
+  bathroomVerification: 'existing',
+  routes: 'service-wired',
 };
 
 export const gamificationParity = {
@@ -23,7 +23,7 @@ export const gamificationParity = {
   rewardHistory: 'existing',
   badges: 'next',
   challenges: 'next',
-  leaderboards: 'next',
+  leaderboards: 'existing',
 };
 
 export const businessParity = {
@@ -32,11 +32,11 @@ export const businessParity = {
   replies: 'existing',
   analytics: 'existing-foundation',
   qr: 'existing-foundation',
-  promotions: 'next',
-  campaigns: 'next',
-  contests: 'next',
-  events: 'next',
-  engagementAttribution: 'next',
+  promotions: 'existing',
+  campaigns: 'existing',
+  contests: 'existing',
+  events: 'existing',
+  engagementAttribution: 'existing-foundation',
   roi: 'next',
 };
 
