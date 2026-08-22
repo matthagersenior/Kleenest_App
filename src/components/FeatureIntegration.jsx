@@ -9,6 +9,7 @@ import IntelligenceNotificationEventBridge from './IntelligenceNotificationEvent
 import ContributionPromptBridge from './ContributionPromptBridge';
 import MapBehaviorBridge from './MapBehaviorBridge';
 import LocationIntelligencePanel from './LocationIntelligencePanel';
+import LocationDataPanel from './LocationDataPanel';
 
 // Cross-cutting integrations only; application routes remain in AppRuntime.
 export default function FeatureIntegration(){
@@ -24,5 +25,6 @@ export default function FeatureIntegration(){
     <ContributionPromptBridge/>
     <MapBehaviorBridge/>
     <LocationIntelligencePanel/>
+    <LocationDataPanel/>
   </>;
 }
