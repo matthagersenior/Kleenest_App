@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { consumer } from './platformCapabilities';
 
 async function requireUser() {
   if (!supabase) throw new Error('Supabase is not configured.');
@@ -11,13 +12,7 @@ async function requireUser() {
 export async function followUser(targetUserId) {
   const user = await requireUser();
   if (!targetUserId || targetUserId === user.id) throw new Error('A different user is required.');
-  const { data, error } = await supabase
-    .from('follows')
-    .upsert({ follower_id: user.id, following_id: targetUserId }, { onConflict: 'follower_id,following_id' })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  return consumer.followUser(targetUserId);
 }
 
 export async function unfollowUser(targetUserId) {
