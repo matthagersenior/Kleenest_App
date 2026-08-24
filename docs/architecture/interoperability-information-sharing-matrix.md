@@ -43,7 +43,7 @@
 
 ### Runtime
 
-`CanonicalAppRuntime` is the production entry point. `App.jsx` is only a compatibility re-export, and `main.jsx` boots `CanonicalAppRuntime`. However, `CanonicalAppRuntime` still lazy-loads `AppRuntime.jsx` for non-canonical paths. This is an architectural interoperability risk: `AppRuntime.jsx` is a legacy runtime implementation and should be progressively absorbed into the canonical runtime, not treated as a second product runtime.
+`CanonicalAppRuntime` is the sole production runtime. `main.jsx` boots it and `App.jsx` remains a compatibility re-export. The former `AppRuntime.jsx` implementation has now been retired and reduced to an import-safe compatibility re-export of `CanonicalAppRuntime`, eliminating the second runtime implementation.
 
 ### Map
 
