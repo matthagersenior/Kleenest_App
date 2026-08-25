@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import { syncOfflineEvents } from '../services/offlinePacks';
+import './OfflineStatus.css';
 
 const DB_NAME='kleenest-offline-network';
 const DB_VERSION=2;
