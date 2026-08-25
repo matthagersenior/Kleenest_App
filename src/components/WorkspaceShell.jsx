@@ -3,6 +3,7 @@ import { Bell, Menu, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { getWorkspaceModel, MEMBERSHIP_UI, WORKSPACE_NAVIGATION, resolveWorkspace } from '../domain/workspaces.js';
+import OfflineStatus from './OfflineStatus.jsx';
 
 function isActive(location, item) { return location.pathname === item.path || location.pathname.startsWith(`${item.path}/`); }
 
@@ -21,6 +22,7 @@ export default function WorkspaceShell({ children, workspace: workspaceOverride 
   const membershipKnown = Object.prototype.hasOwnProperty.call(MEMBERSHIP_UI, model.membership);
   return (
     <div className={`app-shell workspace-shell workspace-${model.workspace.id}`} data-membership={membershipKnown ? model.membership : 'free'}>
+      <OfflineStatus />
       <header className="topbar workspace-topbar">
         <Link className="brand" to="/" onClick={() => setMenuOpen(false)} aria-label="Kleenest home">Kleenest</Link>
         <nav className={`nav workspace-nav ${menuOpen ? 'open' : ''}`} aria-label={`${model.workspace.label} navigation`}>
