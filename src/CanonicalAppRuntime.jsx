@@ -8,6 +8,7 @@ import ProfilePage from './pages/ProfilePage.jsx';
 import GamesPage from './pages/GamesPage.jsx';
 import SocialPage from './pages/SocialPage.jsx';
 import NotificationsPage from './pages/NotificationsPage.jsx';
+import StLouisPilotPage from './pages/StLouisPilotPage.jsx';
 import RouteGuard from './components/RouteGuard.jsx';
 import KleenestFeatureRoutes from './components/KleenestFeatureRoutes.jsx';
 import { discoverUniversalLocations } from './services/universalDiscovery.js';
@@ -175,6 +176,7 @@ function FeatureSurface() {
 
 function CanonicalRuntime() {
   const location = useLocation();
+  if (location.pathname === '/pilot') return <StLouisPilotPage />;
   if (location.pathname === '/map') return <MapWorkspace />;
   if (location.pathname === '/profile') return <WorkspaceShell><ProfilePage onSignIn={() => {}} /></WorkspaceShell>;
   if (location.pathname === '/capabilities') return <RouteGuard capabilities={[CAPABILITIES.ADMIN]}><WorkspaceShell><CapabilityCenterPage /></WorkspaceShell></RouteGuard>;
