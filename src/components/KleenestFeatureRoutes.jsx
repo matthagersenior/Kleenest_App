@@ -14,6 +14,7 @@ import BusinessManagePage from '../pages/BusinessManagePage';
 import BusinessReviewsPage from '../pages/BusinessReviewsPage';
 import FleetReviewPage from '../pages/FleetReviewPage';
 import EnterpriseCommandCenterPage from '../pages/EnterpriseCommandCenterPage';
+import FounderDemoPage from '../pages/FounderDemoPage';
 import AdminDataPage from './AdminDataPage';
 import AdminCrudPage from './AdminCrudPage';
 
@@ -30,6 +31,7 @@ const adminRoute = (element) => <RouteGuard requireAuth roles={ADMIN_ROLES}><Wor
 export default function KleenestFeatureRoutes() {
   return (
     <>
+      <Route path="/demo" element={<FounderDemoPage />} />
       <Route path="/rewards" element={consumerRoute(<RewardsPage />)} />
       <Route path="/progression" element={consumerRoute(<GamificationActionsPage />)} />
       <Route path="/contests" element={consumerRoute(<ContestsPage />)} />
