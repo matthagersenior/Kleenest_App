@@ -24,18 +24,8 @@ create policy if not exists "pilot_leads_public_insert"
     and lead_type in ('business','validator','mentor','intro','investor')
   );
 
-create policy if not exists "pilot_leads_owner_read"
-  on public.pilot_leads
-  for select
-  to authenticated
-  using (
-    exists (
-      select 1
-      from public.user_capabilities uc
-      where uc.user_id = auth.uid()
-        and uc.capability in ('admin','owner','platform_admin')
-    )
-  );
+-- Read access stays service-role/admin-console only until the active owner/admin
+-- capability table is finalized in the canonical app schema.
 
 create index if not exists pilot_leads_created_at_idx on public.pilot_leads (created_at desc);
 create index if not exists pilot_leads_lead_type_idx on public.pilot_leads (lead_type, created_at desc);
